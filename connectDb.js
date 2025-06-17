@@ -1,9 +1,8 @@
-const {connect} = require('mongoose')
+import {connect} from "mongoose"
 
-function connectDb(url) {
+export default function connectDb(URI,password) {
     return () => {
-        return connect(url)
+        const newURI = URI.replace("<db-password>",encodeURIComponent(password))
+        return connect(newURI)
     }
 }
-
-module.exports = connectDb
