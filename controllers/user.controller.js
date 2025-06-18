@@ -79,25 +79,25 @@ async function logoutUser(req, res) {
     }
 
     return res
-            .status(200)
-            .clearCookie('accessToken', options)
-            .clearCookie('refreshToken', options)
-            .json(new ApiResponse("Logged out successfully", {}, 200))
+        .status(200)
+        .clearCookie('accessToken', options)
+        .clearCookie('refreshToken', options)
+        .json(new ApiResponse("Logged out successfully", {}, 200))
 }
 
-async function refreshAccessToken(req,res) {
+async function refreshAccessToken(req, res) {
 
     const incomingRefreshToken = req.cookies.refreshToken || req.header['Authorization'].replace("Bearer ")
-    if(!incomingRefreshToken) throw new ApiError(401, "Need refresh token")
-        
-    const decodedUser =  await promisedJWTVerify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET)
-    if(!decodedUser) throw new ApiError(401, "Invalid token")
-    
+    if (!incomingRefreshToken) throw new ApiError(401, "Need refresh token")
+
+    const decodedUser = await promisedJWTVerify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+    if (!decodedUser) throw new ApiError(401, "Invalid token")
+
     // Check against action after deletion of user
     const user = await User.findById(decodedUser._id)
-    if(!user) throw new ApiError(404, "User not found")
+    if (!user) throw new ApiError(404, "User not found")
 
-    const {accessToken: newAccessToken, refreshToken: newRefreshToken} = await generateAccessAndRefreshToken(user._id)
+    const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshToken(user._id)
 
     const options = {
         httpOnly: true,
@@ -105,11 +105,39 @@ async function refreshAccessToken(req,res) {
     }
 
     return res
-            .status(200)
-            .cookie('accessToken', newAccessToken, options)
-            .cookie('refreshToken',newRefreshToken, options)
-            .json(new ApiResponse("Rotated tokens succesfully", {}, 200))
-    
+        .status(200)
+        .cookie('accessToken', newAccessToken, options)
+        .cookie('refreshToken', newRefreshToken, options)
+        .json(new ApiResponse("Rotated tokens succesfully", {}, 200))
+
 }
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken }
+async function getCurrentUser(req, res) {
+    const user = req.user
+    return res
+        .status(200)
+        .json(new ApiResponse("Successfully fetched current user", { user }, 200))
+}
+
+async function changeUserPassword(req, res) {
+    
+    const { oldPassword, newPassword } = req.body
+    const user = await User.findById(req.user._id)
+
+    if (!oldPassword || !newPassword) throw new ApiError(400, "All fields are required")
+
+    const isPasswordCorrect = await user.comparePassword(oldPassword)
+    if (!isPasswordCorrect) throw new ApiError(401, "Invalid password")
+
+    user.password = newPassword;
+    user.refreshToken = null;
+
+    const isUserUpdated = await user.save();
+    if (!isUserUpdated) throw new ApiError(500, "Something went wrong while updating user")
+
+    return res
+        .status(200)
+        .json(new ApiResponse("Successfully changed the user's password", {}, 200))
+}
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken, getCurrentUser, changeUserPassword }

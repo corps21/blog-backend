@@ -1,7 +1,6 @@
 import { model, Schema } from "mongoose";
 import { hash, compare } from 'bcrypt'
-import { promisify, tryCatchWrapper, promisedJWTSign } from "../utils/index.js";
-import jwt from "jsonwebtoken"
+import { tryCatchWrapper, promisedJWTSign } from "../utils/index.js";
 
 const userSchema = new Schema({
     fullName: {
