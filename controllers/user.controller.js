@@ -1,6 +1,23 @@
 import { ApiError, ApiResponse, promisedJWTVerify } from "../utils/index.js";
 import { User } from "../models/index.js";
 
+/**
+ * @param {Object} res 
+ * @param {String[]} cookieArray 
+ * @param {Object} options 
+ * I found that there are some repeating code for clearing cookies, so created custom function for it 
+ */
+
+function clearCookies(res, cookieArray, options = {
+    httpOnly: true,
+    secure: true
+}) {
+    cookieArray.forEach((cookie) => {
+        res.clearCookie(cookie, options)
+    })
+
+}
+
 async function generateAccessAndRefreshToken(userId) {
     // NOTE: The caller must validate *userId* before caliing this function
     const user = await User.findById(userId)
@@ -73,15 +90,10 @@ async function logoutUser(req, res) {
     const updatedUser = await User.findByIdAndUpdate(user._id, { $unset: { refreshToken: "" } }, { new: true })
     if (!updatedUser) throw new ApiError(500, "Error while updating user")
 
-    const options = {
-        httpOnly: true,
-        secure: true
-    }
-
+    clearCookies(res,['accessToken','refreshToken'])
+    
     return res
         .status(200)
-        .clearCookie('accessToken', options)
-        .clearCookie('refreshToken', options)
         .json(new ApiResponse("Logged out successfully", {}, 200))
 }
 
@@ -120,7 +132,7 @@ async function getCurrentUser(req, res) {
 }
 
 async function changeUserPassword(req, res) {
-    
+
     const { oldPassword, newPassword } = req.body
     const user = await User.findById(req.user._id)
 
@@ -132,12 +144,35 @@ async function changeUserPassword(req, res) {
     user.password = newPassword;
     user.refreshToken = null;
 
-    const isUserUpdated = await user.save();
+    const isUserUpdated = await user.save({validateModifiedOnly: true});
     if (!isUserUpdated) throw new ApiError(500, "Something went wrong while updating user")
+    
+    clearCookies(res,['accessToken','refreshToken'])
 
     return res
         .status(200)
         .json(new ApiResponse("Successfully changed the user's password", {}, 200))
 }
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken, getCurrentUser, changeUserPassword }
+async function updateUserDetails(req, res) {
+    const {email, avatarUrl, fullName} = req.body
+    const user = req.user
+    if([email,avatarUrl,fullName].every(field => !field)) throw new ApiError(400, "Atleast 1 field is required")
+    
+    user.email = email ?? user.email
+    user.avatarUrl = avatarUrl ?? user.avatarUrl
+    user.fullName = fullName ?? user.fullName
+
+    // Another method
+    // const updates = JSON.parse(JSON.stringify({email,avatarUrl,fullName}))
+    // JSON removes all undefined values 
+    // user = {...user, ...updates} 
+
+    const newUser = await user.save({validateModifiedOnly: true}, {new: true})
+    if(!newUser) throw new ApiError(500, "Something went wrong while updating user details")
+    return res
+            .status(200)
+            .json(new ApiResponse("Successfully updated user details", newUser, 200))
+}
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken, getCurrentUser, changeUserPassword, updateUserDetails }
