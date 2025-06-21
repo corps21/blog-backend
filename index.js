@@ -1,7 +1,7 @@
 import express from 'express'
 import connectDb from "./connectDb.js"
 import { configDotenv } from 'dotenv'
-import { userRouter, healthRouter } from './routes/index.js'
+import { userRouter, healthRouter, postRouter } from './routes/index.js'
 import cookieParser from 'cookie-parser'
 
 const app = express()
@@ -18,6 +18,7 @@ app.use(cookieParser())
 // routes
 app.use("/api/v1/health", healthRouter)
 app.use("/api/v1/user",userRouter)
+app.use("/api/v1/post", postRouter)
 
 // connecting database
 connection().then(() => {

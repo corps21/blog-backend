@@ -1,4 +1,4 @@
-import { ApiError, tryCatchWrapper } from "./index.js";
+import { tryCatchWrapper } from "./index.js";
 import { v2 as cloudinary } from "cloudinary";
 
 cloudinary.config({

@@ -26,7 +26,7 @@ const userSchema = new Schema({
         required: true,
     },
     refreshToken: String
-})
+}, {timestamps: true})
 
 userSchema.pre("save", tryCatchWrapper(async function () {
     if (!this.isModified("password")) return;

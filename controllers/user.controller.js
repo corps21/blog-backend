@@ -204,6 +204,7 @@ async function updateUserDetails(req, res) {
 }
 
 async function uploadAvatar(req, res) {
+  const user = req.user
   const avatar = req.file;
   if (!avatar) throw new ApiError(400, "Image is required");
 
@@ -215,6 +216,10 @@ async function uploadAvatar(req, res) {
   // unlink returns undefined upon success
   if (isFileDeleted) throw new ApiError(500, "Error while unlinking file");
 
+  user.avatarUrl = result.url
+  const updatedUser = await user.save({validateModifiedOnly: true});
+  if(!updatedUser) throw new ApiError(500, "Error while updating user avatar") 
+
   return res
     .status(200)
     .json(
@@ -225,7 +230,7 @@ async function uploadAvatar(req, res) {
       )
     );
 }
-// avatar-1750479184026-68519da0226d492548e34917_zza7yu
+
 async function getAvatar(req, res) {
     const {publicId} = req.body
     if(!publicId) throw new ApiError(400, "PublicId is required")
