@@ -16,7 +16,7 @@ const postSchema = new Schema({
         type:String,
         maxLength: 30000
     },
-    coverImage: String,
+    coverImageUrl: String,
     author: {
         type: Schema.Types.ObjectId,
         ref: "user",

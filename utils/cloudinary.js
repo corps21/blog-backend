@@ -12,16 +12,14 @@ const cloudinaryImageUpload = tryCatchWrapper( async ( imagePath, options = { us
   ) => {
     if(!imagePath) throw new Error("Image path is empty")
     const result = await cloudinary.uploader.upload(imagePath, options);
-    if (!result)
-      throw new Error("Something went wrong uploading image");
-    return result.public_id;
+    return result
   }
 );
 
-const getCloudinaryImage = tryCatchWrapper( async (publicId, options = {colors: true}) => {
-    if(!publicId) throw new Error("publicId is required")
-    const result = await cloudinary.api.resource(publicId,options);
-    return result;
+const cloudinaryImageRemove = tryCatchWrapper(async(publicIds, options = {}) => {
+  if(publicIds.length === 0) throw new Error("publicId is empty")
+  const result = await cloudinary.api.delete_resources(publicIds,options)
+  return result
 })
 
-export {cloudinaryImageUpload, getCloudinaryImage};
+export { cloudinaryImageUpload,cloudinaryImageRemove };

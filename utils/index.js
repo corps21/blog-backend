@@ -7,7 +7,7 @@ import {
   sign as promisedJWTSign,
   verify as promisedJWTVerify,
 } from "./promisified.js";
-import { cloudinaryImageUpload, getCloudinaryImage } from "./cloudinary.js";
+import { cloudinaryImageUpload, cloudinaryImageRemove } from "./cloudinary.js";
 
 export {
   ApiResponse,
@@ -18,5 +18,5 @@ export {
   promisedJWTSign,
   promisedJWTVerify,
   cloudinaryImageUpload,
-  getCloudinaryImage,
+  cloudinaryImageRemove
 };

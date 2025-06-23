@@ -1,8 +1,7 @@
 import { ApiError, ApiResponse, promisedJWTVerify } from "../utils/index.js";
 import { User } from "../models/index.js";
-import { cloudinaryImageUpload, getCloudinaryImage } from "../utils/index.js";
+import { cloudinaryImageUpload, cloudinaryImageRemove } from "../utils/index.js";
 import { unlink } from "node:fs/promises";
-
 /**
  * @param {Object} res
  * @param {String[]} cookieArray
@@ -28,28 +27,39 @@ async function generateAccessAndRefreshToken(userId) {
   const user = await User.findById(userId);
   const accessToken = await user.generateAccessToken();
   const refreshToken = await user.generateRefreshToken();
-
+  
   if (!accessToken || !refreshToken)
     throw new ApiError(500, "Error while creating tokens");
-
+  
   user.refreshToken = refreshToken;
-
+  
   await user.save({ validateBeforeSave: false });
-
+  
   return { accessToken, refreshToken };
 }
-
+// TODO: check
 async function registerUser(req, res) {
-  const { fullName, email, userName, avatarUrl, password } = req.body;
+  const { fullName, email, userName, password } = req.body;
+  const avatar = req?.file
+  let avatarUrl;
 
   const existingUser = await User.findOne({ $or: [{ userName }, { email }] });
-
-  if (existingUser) throw new ApiError(400, "Email or Username already exists");
+  if (existingUser) throw new ApiError(409, "Email or Username already exists");
 
   if ([fullName, email, userName, password].some((field) => !field)) {
     throw new ApiError(400, "All fields are required");
   }
 
+  // optional avatar upload
+  if(avatar) {
+    const {path} = avatar
+    const uploadAvatar = await cloudinaryImageUpload(path)
+    if (!uploadAvatar) throw new ApiError(500, "Error while uploading avatar")
+    const isFileRemoved = await unlink(path);
+    if(isFileRemoved) throw new ApiError(500,"Error while unlinking avatar")
+    avatarUrl = uploadAvatar.url
+  }
+  
   const user = await User.create({
     fullName,
     email,
@@ -57,6 +67,7 @@ async function registerUser(req, res) {
     avatarUrl,
     password,
   });
+
   if (!user) throw new ApiError(500, "Error while creating user");
 
   const createdUser = await User.findById(user._id).select(
@@ -118,7 +129,7 @@ async function logoutUser(req, res) {
 
 async function refreshAccessToken(req, res) {
   const incomingRefreshToken =
-    req.cookies.refreshToken || req.header["Authorization"].replace("Bearer ");
+    req.cookies.refreshToken || req.header.Authorization.replace("Bearer ");
   if (!incomingRefreshToken) throw new ApiError(401, "Need refresh token");
 
   const decodedUser = await promisedJWTVerify(
@@ -202,41 +213,33 @@ async function updateUserDetails(req, res) {
     .status(200)
     .json(new ApiResponse("Successfully updated user details", newUser, 200));
 }
-
-async function uploadAvatar(req, res) {
-  const user = req.user
-  const avatar = req.file;
-  if (!avatar) throw new ApiError(400, "Image is required");
-
-  const { path } = avatar;
-  const result = await cloudinaryImageUpload(path);
-  if (!result) throw new ApiError(500, "Error while uploading image");
-
+ // TODO: check
+async function updateAvatar(req,res) {
+  const user = req?.user
+  const avatar = req?.file
+  if(!avatar) throw new ApiError(400, "Avatar is required")
+  const {path} = avatar
+  const uploadedAvatar = await cloudinaryImageUpload(path)
+  if(!uploadedAvatar) throw new ApiError(500,"Error while uploading avatar")
   const isFileDeleted = await unlink(path);
-  // unlink returns undefined upon success
-  if (isFileDeleted) throw new ApiError(500, "Error while unlinking file");
+  if(isFileDeleted) throw new ApiError(500, "error while deleting avatar")
+  const oldAvatarUrl = user.avatarUrl
+  user.avatarUrl = uploadedAvatar.url
+  
+  if(oldAvatarUrl) {
+    // delete previous image
+    const publicId = oldAvatarUrl.split("/").at(-1).split(".")[0]
+    const isCloudinaryDelete = await cloudinaryImageRemove([publicId]);
+    if(!isCloudinaryDelete) throw new ApiError(500, "Error while deleting previous avatar")
+  
+  }
 
-  user.avatarUrl = result.url
-  const updatedUser = await user.save({validateModifiedOnly: true});
-  if(!updatedUser) throw new ApiError(500, "Error while updating user avatar") 
+  const newUser = await user.save({validateModifiedOnly: true})
+  if(!newUser) throw new ApiError("500", "Error while updating user")
 
   return res
-    .status(200)
-    .json(
-      new ApiResponse(
-        "Successfully uploaded avatar",
-        { public_id: result },
-        200
-      )
-    );
-}
-
-async function getAvatar(req, res) {
-    const {publicId} = req.body
-    if(!publicId) throw new ApiError(400, "PublicId is required")
-    const avatar = await getCloudinaryImage(publicId)
-    if(!avatar) throw new ApiError(404, "Avatar is not found")
-    return res.status(200).json(new ApiResponse("Successfully fetched avatar", {avatar}, 200))
+          .status(200)
+          .json(new ApiResponse("Succesfully uploaded avatar url",{url: newUser.avatarUrl},200))
 }
 
 export {
@@ -247,6 +250,5 @@ export {
   getCurrentUser,
   changeUserPassword,
   updateUserDetails,
-  uploadAvatar,
-  getAvatar,
+  updateAvatar
 };
