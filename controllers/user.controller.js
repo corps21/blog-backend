@@ -5,6 +5,7 @@ import {
 	cloudinaryImageRemove,
 } from "../utils/index.js";
 import { unlink } from "node:fs/promises";
+
 /**
  * @param {Object} res
  * @param {String[]} cookieArray
@@ -40,11 +41,9 @@ async function generateAccessAndRefreshToken(userId) {
 
 	return { accessToken, refreshToken };
 }
-// TODO: check
+
 async function registerUser(req, res) {
 	const { fullName, email, userName, password } = req.body;
-	const avatar = req?.file;
-	let avatarUrl;
 
 	const existingUser = await User.findOne({ $or: [{ userName }, { email }] });
 	if (existingUser) throw new ApiError(409, "Email or Username already exists");
@@ -53,21 +52,10 @@ async function registerUser(req, res) {
 		throw new ApiError(400, "All fields are required");
 	}
 
-	// optional avatar upload
-	if (avatar) {
-		const { path } = avatar;
-		const uploadAvatar = await cloudinaryImageUpload(path);
-		if (!uploadAvatar) throw new ApiError(500, "Error while uploading avatar");
-		const isFileRemoved = await unlink(path);
-		if (isFileRemoved) throw new ApiError(500, "Error while unlinking avatar");
-		avatarUrl = uploadAvatar.url;
-	}
-
 	const user = await User.create({
 		fullName,
 		email,
 		userName,
-		avatarUrl,
 		password,
 	});
 
@@ -216,22 +204,27 @@ async function updateUserDetails(req, res) {
 		.status(200)
 		.json(new ApiResponse("Successfully updated user details", newUser, 200));
 }
-// TODO: check
+
 async function updateAvatar(req, res) {
 	const user = req?.user;
 	const avatar = req?.file;
+
 	if (!avatar) throw new ApiError(400, "Avatar is required");
 	const { path } = avatar;
+
 	const uploadedAvatar = await cloudinaryImageUpload(path);
 	if (!uploadedAvatar) throw new ApiError(500, "Error while uploading avatar");
+
 	const isFileDeleted = await unlink(path);
 	if (isFileDeleted) throw new ApiError(500, "error while deleting avatar");
+
 	const oldAvatarUrl = user.avatarUrl;
 	user.avatarUrl = uploadedAvatar.url;
 
 	if (oldAvatarUrl) {
 		// delete previous image
 		const publicId = oldAvatarUrl.split("/").at(-1).split(".")[0];
+
 		const isCloudinaryDelete = await cloudinaryImageRemove([publicId]);
 		if (!isCloudinaryDelete)
 			throw new ApiError(500, "Error while deleting previous avatar");

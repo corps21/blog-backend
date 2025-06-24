@@ -13,11 +13,7 @@ const router = Router();
 // Need authentication
 router
 	.use(asyncReqHandler(verifyJWT))
-	.route("/", asyncReqHandler(verifyJWT))
-	.post(
-		asyncReqHandler(upload.single("coverImage")),
-		asyncReqHandler(createPost),
-	)
+	.post("/", asyncReqHandler(createPost))
 	.route("/:id")
 	.put(asyncReqHandler(updatePost))
 	.patch(

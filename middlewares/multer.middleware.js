@@ -7,10 +7,11 @@ const storage = multer.diskStorage({
 		cb(null, path.resolve("./public/temp"));
 	},
 	filename(req, file, cb) {
-		const uniqueSuffix = `${Date.now()}-${req?.user._id}`;
-		cb(null, `${file.filename}-${uniqueSuffix}`);
+		const uniqueSuffix = `${Date.now()}-${req?.user?._id}`;
+		cb(null, `${file.fieldname}-${uniqueSuffix}`);
 	},
 });
+
 const limits = {
 	fileSize: 31457280, // 30 mb
 };

@@ -13,32 +13,26 @@ import {
 import { verifyJWT, upload } from "../middlewares/index.js";
 const router = Router();
 
-router.post(
-	"/register",
-	asyncReqHandler(upload.single("avatar")),
-	asyncReqHandler(registerUser),
-);
+router.post("/register", asyncReqHandler(registerUser));
 router.post("/refresh-token", asyncReqHandler(refreshAccessToken));
 router.post("/login", asyncReqHandler(loginUser));
 
 // Need authentication
 router.post("/logout", asyncReqHandler(verifyJWT), asyncReqHandler(logoutUser));
-router.get(
-	"/current",
-	asyncReqHandler(verifyJWT),
-	asyncReqHandler(getCurrentUser),
-);
+
+// TODO: check routes
+router
+	.route("/", asyncReqHandler(verifyJWT))
+	.get("/", asyncReqHandler(getCurrentUser))
+	.put("/", asyncReqHandler(updateUserDetails));
+
 router.post(
-	"/change-password",
+	"/password",
 	asyncReqHandler(verifyJWT),
 	asyncReqHandler(changeUserPassword),
 );
+
 router.put(
-	"/update",
-	asyncReqHandler(verifyJWT),
-	asyncReqHandler(updateUserDetails),
-);
-router.patch(
 	"/avatar",
 	asyncReqHandler(verifyJWT),
 	asyncReqHandler(upload.single("avatar")),
