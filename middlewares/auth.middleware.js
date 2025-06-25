@@ -1,5 +1,5 @@
-import { ApiError, promisedJWTVerify } from "../utils/index.js";
 import { User } from "../models/index.js";
+import { ApiError, promisedJWTVerify } from "../utils/index.js";
 
 async function verifyJWT(req, _, next) {
 	const accessToken =

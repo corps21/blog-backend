@@ -1,10 +1,12 @@
-import { ApiError, ApiResponse, promisedJWTVerify } from "../utils/index.js";
+import { unlink } from "node:fs/promises";
 import { User } from "../models/index.js";
 import {
-	cloudinaryImageUpload,
+	ApiError,
+	ApiResponse,
 	cloudinaryImageRemove,
+	cloudinaryImageUpload,
+	promisedJWTVerify,
 } from "../utils/index.js";
-import { unlink } from "node:fs/promises";
 
 /**
  * @param {Object} res

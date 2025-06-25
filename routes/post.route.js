@@ -1,20 +1,28 @@
 import { Router } from "express";
-import { asyncReqHandler } from "../utils/index.js";
 import {
 	createPost,
-	updatePost,
+	getAllPublicPosts,
+	searchPosts,
 	updateCoverImage,
+	updatePost,
 } from "../controllers/post.controller.js";
-import { verifyJWT } from "../middlewares/index.js";
-import { upload } from "../middlewares/index.js";
+import { upload, verifyJWT } from "../middlewares/index.js";
+import { asyncReqHandler } from "../utils/index.js";
 
 const router = Router();
+// check route
+router.get("/", asyncReqHandler(getAllPublicPosts));
 
 // Need authentication
 router
-	.use(asyncReqHandler(verifyJWT))
-	.post("/", asyncReqHandler(createPost))
+	.route("/")
+	.all(asyncReqHandler(verifyJWT))
+	.post(asyncReqHandler(createPost))
+	// check route
+	.get(asyncReqHandler(searchPosts));
+router
 	.route("/:id")
+	.all(asyncReqHandler(verifyJWT))
 	.put(asyncReqHandler(updatePost))
 	.patch(
 		asyncReqHandler(upload.single("coverImage")),

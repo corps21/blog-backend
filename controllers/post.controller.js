@@ -1,11 +1,11 @@
+import { unlink } from "node:fs/promises";
+import { Post } from "../models/index.js";
 import {
 	ApiError,
 	ApiResponse,
-	cloudinaryImageUpload,
 	cloudinaryImageRemove,
+	cloudinaryImageUpload,
 } from "../utils/index.js";
-import { Post } from "../models/index.js";
-import { unlink } from "node:fs/promises";
 
 async function createPost(req, res) {
 	const user = req.user;
@@ -112,7 +112,58 @@ async function updateCoverImage(req, res) {
 }
 
 // TODO: get all public posts
-// TODO: get all public posts of a user
-// TODO: return all public posts for a search text
+async function getAllPublicPosts(_req, res) {
+	const posts = await Post.find({ isPublic: true });
+	return res
+		.status(200)
+		.json(
+			new ApiResponse("Successfully fetched all public posts", { posts }, 200),
+		);
+}
 
-export { createPost, updatePost, updateCoverImage };
+// TODO: get all public posts of a user
+async function getPublicPosts(req, res) {
+	const userId = req.params?.id;
+	if (!userId) throw new ApiError(400, "UserId is required");
+	const posts = await Post.find({
+		$and: [{ isPublic: true }, { author: userId }],
+	});
+	return res
+		.status(200)
+		.json(
+			new ApiResponse("Succesfully fetched all public posts", { posts }, 200),
+		);
+}
+
+// TODO: get all posts of a user
+async function getAllPosts(req, res) {
+	const user = req.user;
+	if (!user) throw new ApiError(401, "Unauthorized request");
+	const posts = await Post.find({ author: user?._id });
+	return res
+		.status(200)
+		.json(new ApiResponse("Successfully fetched all posts", { posts }, 200));
+}
+
+// TODO: return all public posts for a search text
+// try aggregate
+// only give author info, title, cover image
+
+async function searchPosts(req, res) {
+	const searchText = req.query?.search;
+	if (!searchText) throw new ApiError(400, "search is required");
+	const posts = await Post.find({ $text: { $search: searchText } });
+	return res
+		.status(200)
+		.json(new ApiResponse("Succesfully fetched search result", { posts }, 200));
+}
+
+export {
+	createPost,
+	updatePost,
+	updateCoverImage,
+	getAllPublicPosts,
+	getPublicPosts,
+	getAllPosts,
+	searchPosts,
+};

@@ -1,6 +1,6 @@
+import { compare, hash } from "bcrypt";
 import { model, Schema } from "mongoose";
-import { hash, compare } from "bcrypt";
-import { tryCatchWrapper, promisedJWTSign } from "../utils/index.js";
+import { promisedJWTSign, tryCatchWrapper } from "../utils/index.js";
 
 const userSchema = new Schema(
 	{

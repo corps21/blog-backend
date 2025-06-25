@@ -1,16 +1,18 @@
 import { Router } from "express";
-import { asyncReqHandler } from "../utils/index.js";
+import { getAllPosts, getPublicPosts } from "../controllers/post.controller.js";
 import {
+	changeUserPassword,
+	getCurrentUser,
 	loginUser,
-	registerUser,
 	logoutUser,
 	refreshAccessToken,
-	getCurrentUser,
-	changeUserPassword,
-	updateUserDetails,
+	registerUser,
 	updateAvatar,
+	updateUserDetails,
 } from "../controllers/user.controller.js";
-import { verifyJWT, upload } from "../middlewares/index.js";
+import { upload, verifyJWT } from "../middlewares/index.js";
+import { asyncReqHandler } from "../utils/index.js";
+
 const router = Router();
 
 router.post("/register", asyncReqHandler(registerUser));
@@ -19,12 +21,17 @@ router.post("/login", asyncReqHandler(loginUser));
 
 // Need authentication
 router.post("/logout", asyncReqHandler(verifyJWT), asyncReqHandler(logoutUser));
-
 // TODO: check routes
+router.get(
+	"/:id/posts",
+	asyncReqHandler(verifyJWT),
+	asyncReqHandler(getPublicPosts),
+);
+router.get("/posts", asyncReqHandler(verifyJWT), asyncReqHandler(getAllPosts));
 router
 	.route("/", asyncReqHandler(verifyJWT))
-	.get("/", asyncReqHandler(getCurrentUser))
-	.put("/", asyncReqHandler(updateUserDetails));
+	.get(asyncReqHandler(getCurrentUser))
+	.put(asyncReqHandler(updateUserDetails));
 
 router.post(
 	"/password",

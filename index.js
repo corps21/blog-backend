@@ -1,8 +1,8 @@
+import cookieParser from "cookie-parser";
+import { configDotenv } from "dotenv";
 import express from "express";
 import connectDb from "./connectDb.js";
-import { configDotenv } from "dotenv";
-import { userRouter, healthRouter, postRouter } from "./routes/index.js";
-import cookieParser from "cookie-parser";
+import { healthRouter, postRouter, userRouter } from "./routes/index.js";
 
 const app = express();
 configDotenv({
