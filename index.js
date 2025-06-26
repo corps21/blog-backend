@@ -2,6 +2,7 @@ import cookieParser from "cookie-parser";
 import { configDotenv } from "dotenv";
 import express from "express";
 import connectDb from "./connectDb.js";
+import { errorHandler, notFound } from "./middlewares/index.js";
 import { healthRouter, postRouter, userRouter } from "./routes/index.js";
 
 const app = express();
@@ -19,6 +20,10 @@ app.use(cookieParser());
 app.use("/api/v1/health", healthRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/post", postRouter);
+
+// error handler and not found middleware
+app.use(notFound);
+app.use(errorHandler);
 
 // connecting database
 connection()

@@ -111,7 +111,6 @@ async function updateCoverImage(req, res) {
 		);
 }
 
-// TODO: get all public posts
 async function getAllPublicPosts(_req, res) {
 	const posts = await Post.find({ isPublic: true });
 	return res
@@ -121,7 +120,6 @@ async function getAllPublicPosts(_req, res) {
 		);
 }
 
-// TODO: get all public posts of a user
 async function getPublicPosts(req, res) {
 	const userId = req.params?.id;
 	if (!userId) throw new ApiError(400, "UserId is required");
@@ -135,7 +133,6 @@ async function getPublicPosts(req, res) {
 		);
 }
 
-// TODO: get all posts of a user
 async function getAllPosts(req, res) {
 	const user = req.user;
 	if (!user) throw new ApiError(401, "Unauthorized request");

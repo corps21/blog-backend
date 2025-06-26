@@ -15,35 +15,36 @@ import { asyncReqHandler } from "../utils/index.js";
 
 const router = Router();
 
-router.post("/register", asyncReqHandler(registerUser));
-router.post("/refresh-token", asyncReqHandler(refreshAccessToken));
-router.post("/login", asyncReqHandler(loginUser));
-
-// Need authentication
-router.post("/logout", asyncReqHandler(verifyJWT), asyncReqHandler(logoutUser));
-// TODO: check routes
-router.get(
-	"/:id/posts",
-	asyncReqHandler(verifyJWT),
-	asyncReqHandler(getPublicPosts),
-);
-router.get("/posts", asyncReqHandler(verifyJWT), asyncReqHandler(getAllPosts));
+// Public route
 router
-	.route("/", asyncReqHandler(verifyJWT))
-	.get(asyncReqHandler(getCurrentUser))
-	.put(asyncReqHandler(updateUserDetails));
+	.post("/register", asyncReqHandler(registerUser)) // DONE ✅
+	.post("/refresh-token", asyncReqHandler(refreshAccessToken)) // DONE ✅
+	.post("/login", asyncReqHandler(loginUser)); // DONE ✅
 
-router.post(
-	"/password",
-	asyncReqHandler(verifyJWT),
-	asyncReqHandler(changeUserPassword),
-);
+// Protected route
+router
+	.route("/me")
+	.get(asyncReqHandler(verifyJWT), asyncReqHandler(getCurrentUser)) // DONE ✅
+	.put(asyncReqHandler(verifyJWT), asyncReqHandler(updateUserDetails)); // DONE ✅
 
-router.put(
-	"/avatar",
-	asyncReqHandler(verifyJWT),
-	asyncReqHandler(upload.single("avatar")),
-	asyncReqHandler(updateAvatar),
-);
+router
+	.post("/logout", asyncReqHandler(verifyJWT), asyncReqHandler(logoutUser)) // DONE ✅
+	.get("/posts", asyncReqHandler(verifyJWT), asyncReqHandler(getAllPosts)) // DONE ✅
+	.post(
+		"/password",
+		asyncReqHandler(verifyJWT),
+		asyncReqHandler(changeUserPassword),
+	) // DONE ✅
+	.put(
+		"/avatar",
+		asyncReqHandler(verifyJWT),
+		asyncReqHandler(upload.single("avatar")),
+		asyncReqHandler(updateAvatar),
+	) // DONE ✅
+	.get(
+		"/:id/posts",
+		asyncReqHandler(verifyJWT),
+		asyncReqHandler(getPublicPosts),
+	); // DONE ✅
 
 export default router;

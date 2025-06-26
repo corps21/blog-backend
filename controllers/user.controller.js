@@ -66,7 +66,7 @@ async function registerUser(req, res) {
 	const createdUser = await User.findById(user._id).select(
 		"-password -refreshToken",
 	);
-	return res
+	res
 		.status(201)
 		.json(new ApiResponse("Successfully created", createdUser, 201));
 }
@@ -96,7 +96,7 @@ async function loginUser(req, res) {
 		secure: true,
 	};
 
-	return res
+	res
 		.status(200)
 		.cookie("accessToken", accessToken, options)
 		.cookie("refreshToken", refreshToken, options)
@@ -115,9 +115,7 @@ async function logoutUser(req, res) {
 
 	clearCookies(res, ["accessToken", "refreshToken"]);
 
-	return res
-		.status(200)
-		.json(new ApiResponse("Logged out successfully", {}, 200));
+	res.status(200).json(new ApiResponse("Logged out successfully", {}, 200));
 }
 
 async function refreshAccessToken(req, res) {
@@ -143,7 +141,7 @@ async function refreshAccessToken(req, res) {
 		secure: true,
 	};
 
-	return res
+	res
 		.status(200)
 		.cookie("accessToken", newAccessToken, options)
 		.cookie("refreshToken", newRefreshToken, options)
@@ -152,7 +150,7 @@ async function refreshAccessToken(req, res) {
 
 async function getCurrentUser(req, res) {
 	const user = req.user;
-	return res
+	res
 		.status(200)
 		.json(new ApiResponse("Successfully fetched current user", { user }, 200));
 }
@@ -176,19 +174,18 @@ async function changeUserPassword(req, res) {
 
 	clearCookies(res, ["accessToken", "refreshToken"]);
 
-	return res
+	res
 		.status(200)
 		.json(new ApiResponse("Successfully changed the user's password", {}, 200));
 }
 
 async function updateUserDetails(req, res) {
-	const { email, avatarUrl, fullName } = req.body;
+	const { email, fullName } = req.body;
 	const user = req.user;
-	if ([email, avatarUrl, fullName].every((field) => !field))
+	if ([email, fullName].every((field) => !field))
 		throw new ApiError(400, "Atleast 1 field is required");
 
 	user.email = email ?? user.email;
-	user.avatarUrl = avatarUrl ?? user.avatarUrl;
 	user.fullName = fullName ?? user.fullName;
 
 	// Another method
@@ -202,7 +199,7 @@ async function updateUserDetails(req, res) {
 	);
 	if (!newUser)
 		throw new ApiError(500, "Something went wrong while updating user details");
-	return res
+	res
 		.status(200)
 		.json(new ApiResponse("Successfully updated user details", newUser, 200));
 }
@@ -235,7 +232,7 @@ async function updateAvatar(req, res) {
 	const newUser = await user.save({ validateModifiedOnly: true });
 	if (!newUser) throw new ApiError("500", "Error while updating user");
 
-	return res
+	res
 		.status(200)
 		.json(
 			new ApiResponse(
