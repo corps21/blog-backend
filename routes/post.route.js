@@ -18,7 +18,7 @@ router.get("/", asyncReqHandler(getAllPublicPosts)); // DONE ✅
 router
 	.route("/")
 	.post(asyncReqHandler(verifyJWT), asyncReqHandler(createPost)) // DONE ✅
-	.get(asyncReqHandler(verifyJWT), asyncReqHandler(searchPosts)); // Not working
+	.get(asyncReqHandler(verifyJWT), asyncReqHandler(searchPosts)); // DONE ✅
 
 router
 	.route("/:id")

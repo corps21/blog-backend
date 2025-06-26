@@ -37,3 +37,5 @@ connection()
 	.catch((err) =>
 		console.log("Error while making connection to database ", err),
 	);
+
+export default app

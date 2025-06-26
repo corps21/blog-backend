@@ -6,6 +6,7 @@ const postSchema = new Schema(
 			type: String,
 			required: true,
 			trim: true,
+			index:"text",
 		},
 		slug: {
 			type: String,

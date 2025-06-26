@@ -142,7 +142,6 @@ async function getAllPosts(req, res) {
 		.json(new ApiResponse("Successfully fetched all posts", { posts }, 200));
 }
 
-// TODO: return all public posts for a search text
 // try aggregate
 // only give author info, title, cover image
 
