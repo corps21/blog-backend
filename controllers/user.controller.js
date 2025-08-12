@@ -3,6 +3,7 @@ import { User } from "../models/index.js";
 import {
 	ApiError,
 	ApiResponse,
+	asyncReqHandler,
 	cloudinaryImageRemove,
 	cloudinaryImageUpload,
 	promisedJWTVerify,
@@ -44,7 +45,7 @@ async function generateAccessAndRefreshToken(userId) {
 	return { accessToken, refreshToken };
 }
 
-async function registerUser(req, res) {
+const registerUser = asyncReqHandler(async (req, res) => {
 	const { fullName, email, userName, password } = req.body;
 
 	const existingUser = await User.findOne({ $or: [{ userName }, { email }] });
@@ -69,9 +70,9 @@ async function registerUser(req, res) {
 	res
 		.status(201)
 		.json(new ApiResponse("Successfully created", createdUser, 201));
-}
+});
 
-async function loginUser(req, res) {
+const loginUser = asyncReqHandler(async (req, res) => {
 	const { email, userName, password } = req.body;
 
 	if (![email, userName].some((field) => field)) {
@@ -101,9 +102,9 @@ async function loginUser(req, res) {
 		.cookie("accessToken", accessToken, options)
 		.cookie("refreshToken", refreshToken, options)
 		.json(new ApiResponse("Successfully logged in", {}, 200));
-}
+});
 
-async function logoutUser(req, res) {
+const logoutUser = asyncReqHandler(async (req, res) => {
 	const user = req.user;
 
 	const updatedUser = await User.findByIdAndUpdate(
@@ -116,9 +117,9 @@ async function logoutUser(req, res) {
 	clearCookies(res, ["accessToken", "refreshToken"]);
 
 	res.status(200).json(new ApiResponse("Logged out successfully", {}, 200));
-}
+});
 
-async function refreshAccessToken(req, res) {
+const refreshAccessToken = asyncReqHandler(async (req, res) => {
 	const incomingRefreshToken =
 		req.cookies.refreshToken || req.header.Authorization.replace("Bearer ");
 	if (!incomingRefreshToken) throw new ApiError(401, "Need refresh token");
@@ -146,16 +147,16 @@ async function refreshAccessToken(req, res) {
 		.cookie("accessToken", newAccessToken, options)
 		.cookie("refreshToken", newRefreshToken, options)
 		.json(new ApiResponse("Rotated tokens succesfully", {}, 200));
-}
+});
 
-async function getCurrentUser(req, res) {
+const getCurrentUser = asyncReqHandler(async (req, res) => {
 	const user = req.user;
 	res
 		.status(200)
 		.json(new ApiResponse("Successfully fetched current user", { user }, 200));
-}
+});
 
-async function changeUserPassword(req, res) {
+const changeUserPassword = asyncReqHandler(async (req, res) => {
 	const { oldPassword, newPassword } = req.body;
 	const user = await User.findById(req.user._id);
 
@@ -177,9 +178,9 @@ async function changeUserPassword(req, res) {
 	res
 		.status(200)
 		.json(new ApiResponse("Successfully changed the user's password", {}, 200));
-}
+});
 
-async function updateUserDetails(req, res) {
+const updateUserDetails = asyncReqHandler(async (req, res) => {
 	const { email, fullName } = req.body;
 	const user = req.user;
 	if ([email, fullName].every((field) => !field))
@@ -202,9 +203,9 @@ async function updateUserDetails(req, res) {
 	res
 		.status(200)
 		.json(new ApiResponse("Successfully updated user details", newUser, 200));
-}
+});
 
-async function updateAvatar(req, res) {
+const updateAvatar = asyncReqHandler(async (req, res) => {
 	const user = req?.user;
 	const avatar = req?.file;
 
@@ -241,7 +242,7 @@ async function updateAvatar(req, res) {
 				200,
 			),
 		);
-}
+});
 
 export {
 	registerUser,

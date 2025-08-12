@@ -3,11 +3,12 @@ import { Post } from "../models/index.js";
 import {
 	ApiError,
 	ApiResponse,
+	asyncReqHandler,
 	cloudinaryImageRemove,
 	cloudinaryImageUpload,
 } from "../utils/index.js";
 
-async function createPost(req, res) {
+const createPost = asyncReqHandler(async (req, res) => {
 	const user = req.user;
 	const { title, slug, body, isPublic } = req.body;
 
@@ -30,9 +31,9 @@ async function createPost(req, res) {
 	return res
 		.status(201)
 		.json(new ApiResponse("Post created successfully", { post }, 201));
-}
+});
 
-async function updatePost(req, res) {
+const updatePost = asyncReqHandler(async (req, res) => {
 	const user = req?.user;
 	const postId = req.params.id;
 	const { title, body, isPublic } = req.body;
@@ -61,9 +62,9 @@ async function updatePost(req, res) {
 		.json(
 			new ApiResponse("Succesfully updated the post", { post: newPost }, 200),
 		);
-}
+});
 
-async function updateCoverImage(req, res) {
+const updateCoverImage = asyncReqHandler(async (req, res) => {
 	const user = req?.user;
 
 	const postId = req.params?.id;
@@ -109,18 +110,18 @@ async function updateCoverImage(req, res) {
 				200,
 			),
 		);
-}
+});
 
-async function getAllPublicPosts(_req, res) {
+const getAllPublicPosts = asyncReqHandler(async (_req, res) => {
 	const posts = await Post.find({ isPublic: true });
 	return res
 		.status(200)
 		.json(
 			new ApiResponse("Successfully fetched all public posts", { posts }, 200),
 		);
-}
+});
 
-async function getPublicPosts(req, res) {
+const getPublicPosts = asyncReqHandler(async (req, res) => {
 	const userId = req.params?.id;
 	if (!userId) throw new ApiError(400, "UserId is required");
 	const posts = await Post.find({
@@ -131,28 +132,26 @@ async function getPublicPosts(req, res) {
 		.json(
 			new ApiResponse("Succesfully fetched all public posts", { posts }, 200),
 		);
-}
-
-async function getAllPosts(req, res) {
+});
+const getAllPosts = asyncReqHandler(async (req, res) => {
 	const user = req.user;
 	if (!user) throw new ApiError(401, "Unauthorized request");
 	const posts = await Post.find({ author: user?._id });
 	return res
 		.status(200)
 		.json(new ApiResponse("Successfully fetched all posts", { posts }, 200));
-}
+});
 
 // try aggregate
 // only give author info, title, cover image
-
-async function searchPosts(req, res) {
+const searchPosts = asyncReqHandler(async (req, res) => {
 	const searchText = req.query?.search;
 	if (!searchText) throw new ApiError(400, "search is required");
 	const posts = await Post.find({ $text: { $search: searchText } });
 	return res
 		.status(200)
 		.json(new ApiResponse("Succesfully fetched search result", { posts }, 200));
-}
+});
 
 export {
 	createPost,

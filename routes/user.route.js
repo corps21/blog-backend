@@ -17,34 +17,26 @@ const router = Router();
 
 // Public route
 router
-	.post("/register", asyncReqHandler(registerUser)) // DONE ✅
-	.post("/refresh-token", asyncReqHandler(refreshAccessToken)) // DONE ✅
-	.post("/login", asyncReqHandler(loginUser)); // DONE ✅
+	.post("/register", registerUser) // DONE ✅
+	.post("/refresh-token", refreshAccessToken) // DONE ✅
+	.post("/login", loginUser); // DONE ✅
 
 // Protected route
 router
 	.route("/me")
-	.get(asyncReqHandler(verifyJWT), asyncReqHandler(getCurrentUser)) // DONE ✅
-	.put(asyncReqHandler(verifyJWT), asyncReqHandler(updateUserDetails)); // DONE ✅
+	.get(verifyJWT, getCurrentUser) // DONE ✅
+	.put(verifyJWT, updateUserDetails); // DONE ✅
 
 router
-	.post("/logout", asyncReqHandler(verifyJWT), asyncReqHandler(logoutUser)) // DONE ✅
-	.get("/posts", asyncReqHandler(verifyJWT), asyncReqHandler(getAllPosts)) // DONE ✅
-	.post(
-		"/password",
-		asyncReqHandler(verifyJWT),
-		asyncReqHandler(changeUserPassword),
-	) // DONE ✅
+	.post("/logout", verifyJWT, logoutUser) // DONE ✅
+	.get("/posts", verifyJWT, getAllPosts) // DONE ✅
+	.post("/password", verifyJWT, changeUserPassword) // DONE ✅
 	.put(
 		"/avatar",
-		asyncReqHandler(verifyJWT),
+		verifyJWT,
 		asyncReqHandler(upload.single("avatar")),
-		asyncReqHandler(updateAvatar),
+		updateAvatar,
 	) // DONE ✅
-	.get(
-		"/:id/posts",
-		asyncReqHandler(verifyJWT),
-		asyncReqHandler(getPublicPosts),
-	); // DONE ✅
+	.get("/:id/posts", verifyJWT, getPublicPosts); // DONE ✅
 
 export default router;

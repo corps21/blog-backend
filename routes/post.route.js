@@ -12,21 +12,21 @@ import { asyncReqHandler } from "../utils/index.js";
 const router = Router();
 
 // Public route
-router.get("/", asyncReqHandler(getAllPublicPosts)); // DONE ✅
+router.get("/", getAllPublicPosts); // DONE ✅
 
 // Protected route
 router
 	.route("/")
-	.post(asyncReqHandler(verifyJWT), asyncReqHandler(createPost)) // DONE ✅
-	.get(asyncReqHandler(verifyJWT), asyncReqHandler(searchPosts)); // DONE ✅
+	.post(verifyJWT, createPost) // DONE ✅
+	.get(verifyJWT, searchPosts); // DONE ✅
 
 router
 	.route("/:id")
-	.put(asyncReqHandler(verifyJWT), asyncReqHandler(updatePost)) // DONE ✅
+	.put(verifyJWT, updatePost) // DONE ✅
 	.patch(
-		asyncReqHandler(verifyJWT),
+		verifyJWT,
 		asyncReqHandler(upload.single("coverImage")),
-		asyncReqHandler(updateCoverImage),
+		updateCoverImage,
 	); // DONE ✅
 
 export default router;

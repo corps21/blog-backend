@@ -5,7 +5,7 @@ import { cloudinaryImageRemove, cloudinaryImageUpload } from "./cloudinary.js";
 import {
 	sign as promisedJWTSign,
 	verify as promisedJWTVerify,
-} from "./promisified.js";
+} from "./promisedJWT.js";
 import { promisify } from "./promisify.js";
 import tryCatchWrapper from "./tryCatchWrapper.js";
 

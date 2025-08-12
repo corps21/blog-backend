@@ -6,7 +6,6 @@ const postSchema = new Schema(
 			type: String,
 			required: true,
 			trim: true,
-			index:"text",
 		},
 		slug: {
 			type: String,
@@ -32,6 +31,7 @@ const postSchema = new Schema(
 	{ timestamps: true },
 );
 
+postSchema.index({ title: "text" });
 const Post = model("post", postSchema);
 
 export { Post };

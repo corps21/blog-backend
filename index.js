@@ -38,4 +38,4 @@ connection()
 		console.log("Error while making connection to database ", err),
 	);
 
-export default app
+export default app;

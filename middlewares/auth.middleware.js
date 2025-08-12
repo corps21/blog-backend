@@ -1,7 +1,11 @@
 import { User } from "../models/index.js";
-import { ApiError, promisedJWTVerify } from "../utils/index.js";
+import {
+	ApiError,
+	asyncReqHandler,
+	promisedJWTVerify,
+} from "../utils/index.js";
 
-async function verifyJWT(req, _, next) {
+const verifyJWT = asyncReqHandler(async (req, _, next) => {
 	const accessToken =
 		req.cookies?.accessToken ||
 		req.headers.Authorization?.replace("Bearer ", "");
@@ -18,6 +22,6 @@ async function verifyJWT(req, _, next) {
 	if (!user) throw new ApiError(404, "User not found");
 	req.user = user;
 	next();
-}
+});
 
 export { verifyJWT };
