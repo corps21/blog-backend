@@ -1,6 +1,6 @@
 import { unlink } from "node:fs/promises";
-import { cloudinaryImageRemove, cloudinaryImageUpload } from "./cloudinary";
-import tryCatchWrapper from "./tryCatchWrapper";
+import { cloudinaryImageRemove, cloudinaryImageUpload } from "./cloudinary.js";
+import tryCatchWrapper from "./tryCatchWrapper.js";
 
 const uploadHandler = tryCatchWrapper(async (path) => {
 	const uploadedImage = await cloudinaryImageUpload(path);

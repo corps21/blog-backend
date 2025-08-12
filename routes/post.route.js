@@ -12,7 +12,7 @@ import { asyncReqHandler } from "../utils/index.js";
 const router = Router();
 
 // Public route
-router.get("/", getAllPublicPosts); // DONE ✅
+router.get("/public", getAllPublicPosts); // DONE ✅
 
 // Protected route
 router

@@ -12,8 +12,8 @@ configDotenv({
 const connection = connectDb(process.env.MONGODB_URI, process.env.MONGODB_PASS);
 
 // global middleware
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(cookieParser());
 
 // routes
