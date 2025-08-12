@@ -1,11 +1,10 @@
-import { unlink } from "node:fs/promises";
 import { Post } from "../models/index.js";
 import {
 	ApiError,
 	ApiResponse,
 	asyncReqHandler,
-	cloudinaryImageRemove,
-	cloudinaryImageUpload,
+	deleteHandler,
+	uploadHandler,
 } from "../utils/index.js";
 
 const createPost = asyncReqHandler(async (req, res) => {
@@ -79,23 +78,14 @@ const updateCoverImage = asyncReqHandler(async (req, res) => {
 	if (!post) throw new ApiError(404, "Post not found");
 
 	const { path } = coverImage;
-	const uploadedCoverImage = await cloudinaryImageUpload(path);
-	if (!uploadedCoverImage)
-		throw new ApiError(500, "Error while uploading cover image");
-
-	const isFileDeleted = await unlink(path);
-	if (isFileDeleted)
-		throw new ApiError(500, "error while deleting cover image");
+	const uploadedCoverImage = await uploadHandler(path);
 
 	const oldCoverImageUrl = post.coverImageUrl;
 	post.coverImageUrl = uploadedCoverImage.url;
 
 	if (oldCoverImageUrl) {
 		// delete previous image
-		const publicId = oldCoverImageUrl.split("/").at(-1).split(".")[0];
-		const isCloudinaryDelete = await cloudinaryImageRemove([publicId]);
-		if (!isCloudinaryDelete)
-			throw new ApiError(500, "Error while deleting previous cover image");
+		await deleteHandler(oldCoverImageUrl);
 	}
 
 	const newPost = await post.save({ validateModifiedOnly: true });

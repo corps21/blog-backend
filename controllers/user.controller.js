@@ -1,12 +1,11 @@
-import { unlink } from "node:fs/promises";
 import { User } from "../models/index.js";
 import {
 	ApiError,
 	ApiResponse,
 	asyncReqHandler,
-	cloudinaryImageRemove,
-	cloudinaryImageUpload,
+	deleteHandler,
 	promisedJWTVerify,
+	uploadHandler,
 } from "../utils/index.js";
 
 /**
@@ -32,8 +31,8 @@ function clearCookies(
 async function generateAccessAndRefreshToken(userId) {
 	// NOTE: The caller must validate *userId* before caliing this function
 	const user = await User.findById(userId);
-	const accessToken = await user.generateAccessToken();
-	const refreshToken = await user.generateRefreshToken();
+	const promises = [user.generateAccessToken(), user.generateRefreshToken()];
+	const [accessToken, refreshToken] = await Promise.all(promises);
 
 	if (!accessToken || !refreshToken)
 		throw new ApiError(500, "Error while creating tokens");
@@ -194,15 +193,17 @@ const updateUserDetails = asyncReqHandler(async (req, res) => {
 	// JSON removes all undefined values
 	// user = {...user, ...updates}
 
-	const newUser = await user.save(
+	const updatedUser = await user.save(
 		{ validateModifiedOnly: true },
 		{ new: true },
 	);
-	if (!newUser)
+	if (!updatedUser)
 		throw new ApiError(500, "Something went wrong while updating user details");
 	res
 		.status(200)
-		.json(new ApiResponse("Successfully updated user details", newUser, 200));
+		.json(
+			new ApiResponse("Successfully updated user details", updatedUser, 200),
+		);
 });
 
 const updateAvatar = asyncReqHandler(async (req, res) => {
@@ -212,22 +213,14 @@ const updateAvatar = asyncReqHandler(async (req, res) => {
 	if (!avatar) throw new ApiError(400, "Avatar is required");
 	const { path } = avatar;
 
-	const uploadedAvatar = await cloudinaryImageUpload(path);
-	if (!uploadedAvatar) throw new ApiError(500, "Error while uploading avatar");
-
-	const isFileDeleted = await unlink(path);
-	if (isFileDeleted) throw new ApiError(500, "error while deleting avatar");
+	const uploadedAvatar = await uploadHandler(path);
 
 	const oldAvatarUrl = user.avatarUrl;
 	user.avatarUrl = uploadedAvatar.url;
 
 	if (oldAvatarUrl) {
 		// delete previous image
-		const publicId = oldAvatarUrl.split("/").at(-1).split(".")[0];
-
-		const isCloudinaryDelete = await cloudinaryImageRemove([publicId]);
-		if (!isCloudinaryDelete)
-			throw new ApiError(500, "Error while deleting previous avatar");
+		await deleteHandler(oldAvatarUrl);
 	}
 
 	const newUser = await user.save({ validateModifiedOnly: true });

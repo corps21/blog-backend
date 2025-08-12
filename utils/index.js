@@ -2,6 +2,7 @@ import { ApiError } from "./apiError.js";
 import { ApiResponse } from "./apiResponse.js";
 import asyncReqHandler from "./asyncReqHandler.js";
 import { cloudinaryImageRemove, cloudinaryImageUpload } from "./cloudinary.js";
+import { deleteHandler, uploadHandler } from "./cloudinaryHandler.js";
 import {
 	sign as promisedJWTSign,
 	verify as promisedJWTVerify,
@@ -19,4 +20,6 @@ export {
 	promisedJWTVerify,
 	cloudinaryImageUpload,
 	cloudinaryImageRemove,
+	uploadHandler,
+	deleteHandler,
 };
