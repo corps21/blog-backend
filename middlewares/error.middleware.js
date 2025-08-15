@@ -5,7 +5,7 @@ configDotenv({
 });
 
 export function errorHandler(err, _req, res, _next) {
-	const statusCode = res.statusCode !== 200 ? res.statusCode : 500;
+	const statusCode = err.statusCode;
 	res.status(statusCode);
 	res.json({
 		message: err.message,
