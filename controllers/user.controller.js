@@ -1,5 +1,9 @@
 import { User } from "../models/index.js";
 import {
+	userExcludedFields,
+	userExcludedFieldsForLogin,
+} from "../utils/constants.js";
+import {
 	ApiError,
 	ApiResponse,
 	asyncReqHandler,
@@ -63,9 +67,7 @@ const registerUser = asyncReqHandler(async (req, res) => {
 
 	if (!user) throw new ApiError(500, "Error while creating user");
 
-	const createdUser = await User.findById(user._id).select(
-		"-password -refreshToken",
-	);
+	const createdUser = await User.findById(user._id).select(userExcludedFields);
 	res
 		.status(201)
 		.json(new ApiResponse("Successfully created", createdUser, 201));
@@ -80,7 +82,9 @@ const loginUser = asyncReqHandler(async (req, res) => {
 
 	if (!password) throw new ApiError(400, "All fields are required");
 
-	const user = await User.findOne({ $or: [{ email }, { userName }] });
+	const user = await User.findOne({ $or: [{ email }, { userName }] }).select(
+		userExcludedFieldsForLogin,
+	);
 	if (!user) throw new ApiError(404, "User not found");
 
 	const isPasswordCorrect = await user.comparePassword(password);
@@ -96,11 +100,13 @@ const loginUser = asyncReqHandler(async (req, res) => {
 		secure: true,
 	};
 
+	const { password: _password, ...safeUser } = user.toObject();
+
 	res
 		.status(200)
 		.cookie("accessToken", accessToken, options)
 		.cookie("refreshToken", refreshToken, options)
-		.json(new ApiResponse("Successfully logged in", {}, 200));
+		.json(new ApiResponse("Successfully logged in", { ...safeUser }, 200));
 });
 
 const logoutUser = asyncReqHandler(async (req, res) => {
