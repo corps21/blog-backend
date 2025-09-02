@@ -33,7 +33,7 @@ function clearCookies(
 }
 
 async function generateAccessAndRefreshToken(userId) {
-	// NOTE: The caller must validate *userId* before caliing this function
+	// NOTE: The caller must validate *userId* before calling this function
 	const user = await User.findById(userId);
 	const promises = [user.generateAccessToken(), user.generateRefreshToken()];
 	const [accessToken, refreshToken] = await Promise.all(promises);
@@ -104,9 +104,14 @@ const loginUser = asyncReqHandler(async (req, res) => {
 
 	res
 		.status(200)
-		.cookie("accessToken", accessToken, options)
 		.cookie("refreshToken", refreshToken, options)
-		.json(new ApiResponse("Successfully logged in", { ...safeUser }, 200));
+		.json(
+			new ApiResponse(
+				"Successfully logged in",
+				{ user: safeUser, accessToken: accessToken },
+				200,
+			),
+		);
 });
 
 const logoutUser = asyncReqHandler(async (req, res) => {
@@ -119,7 +124,7 @@ const logoutUser = asyncReqHandler(async (req, res) => {
 	);
 	if (!updatedUser) throw new ApiError(500, "Error while updating user");
 
-	clearCookies(res, ["accessToken", "refreshToken"]);
+	clearCookies(res, ["refreshToken"]);
 
 	res.status(200).json(new ApiResponse("Logged out successfully", {}, 200));
 });
@@ -149,9 +154,14 @@ const refreshAccessToken = asyncReqHandler(async (req, res) => {
 
 	res
 		.status(200)
-		.cookie("accessToken", newAccessToken, options)
 		.cookie("refreshToken", newRefreshToken, options)
-		.json(new ApiResponse("Rotated tokens succesfully", {}, 200));
+		.json(
+			new ApiResponse(
+				"Rotated tokens succesfully",
+				{ accessToken: newAccessToken },
+				200,
+			),
+		);
 });
 
 const getCurrentUser = asyncReqHandler(async (req, res) => {
@@ -178,7 +188,7 @@ const changeUserPassword = asyncReqHandler(async (req, res) => {
 	if (!isUserUpdated)
 		throw new ApiError(500, "Something went wrong while updating user");
 
-	clearCookies(res, ["accessToken", "refreshToken"]);
+	clearCookies(res, ["refreshToken"]);
 
 	res
 		.status(200)

@@ -9,7 +9,7 @@ import {
 const verifyJWT = asyncReqHandler(async (req, _, next) => {
 	const accessToken =
 		req.cookies?.accessToken ||
-		req.headers.Authorization?.replace("Bearer ", "");
+		req.headers.authorization?.replace("Bearer ", "");
 	if (!accessToken)
 		throw new ApiError(401, "Need access token for this request");
 	const decodedUser = await promisedJWTVerify(
