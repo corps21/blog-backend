@@ -1,4 +1,5 @@
 import { Post } from "../models/index.js";
+import { postExcludedFields } from "../utils/constants.js";
 import {
 	ApiError,
 	ApiResponse,
@@ -24,7 +25,7 @@ const createPost = asyncReqHandler(async (req, res) => {
 		body,
 		isPublic,
 		author: user._id,
-	});
+	}).select(postExcludedFields);
 	if (!post) throw new ApiError(500, "Error while creating the post");
 
 	return res
@@ -34,15 +35,15 @@ const createPost = asyncReqHandler(async (req, res) => {
 
 const updatePost = asyncReqHandler(async (req, res) => {
 	const user = req?.user;
-	const postId = req.params.id;
+	const slug = req.params?.slug;
 	const { title, body, isPublic } = req.body;
 
 	if ([title, body, isPublic].every((field) => !field))
 		throw new ApiError(400, "Atleast one field is required");
 
 	const post = await Post.findOne({
-		$and: [{ _id: postId }, { author: user?._id }],
-	});
+		$and: [{ slug }, { author: user?._id }],
+	}).select(postExcludedFields);
 	if (!post) throw new ApiError(404, "Post not found");
 
 	post.title = title ?? post.title;
@@ -66,14 +67,14 @@ const updatePost = asyncReqHandler(async (req, res) => {
 const updateCoverImage = asyncReqHandler(async (req, res) => {
 	const user = req?.user;
 
-	const postId = req.params?.id;
-	if (!postId) throw new ApiError(400, "Post id is required");
+	const slug = req.params?.slug;
+	if (!slug) throw new ApiError(400, "slug is required");
 
 	const coverImage = req?.file;
 	if (!coverImage) throw new ApiError(400, "Cover Image is required");
 
 	const post = await Post.findOne({
-		$and: [{ _id: postId }, { author: user?._id }],
+		$and: [{ slug }, { author: user?._id }],
 	});
 	if (!post) throw new ApiError(404, "Post not found");
 
@@ -102,8 +103,26 @@ const updateCoverImage = asyncReqHandler(async (req, res) => {
 		);
 });
 
+const getPublicPostBySlug = asyncReqHandler(async (req, res) => {
+	const slug = req.params?.slug;
+	if (!slug) throw new ApiError(400, "slug is required");
+	const post = await Post.findOne({ slug }).select(postExcludedFields);
+	if (!post) throw new ApiError(404, "Post not found");
+
+	return res
+		.status(200)
+		.json(
+			new ApiResponse(
+				"Succesfully fetched the post",
+				{ post },
+				200,
+			),
+		);
+})
+
+// all public posts
 const getAllPublicPosts = asyncReqHandler(async (_req, res) => {
-	const posts = await Post.find({ isPublic: true });
+	const posts = await Post.find({ isPublic: true }).select(postExcludedFields);
 	return res
 		.status(200)
 		.json(
@@ -111,22 +130,25 @@ const getAllPublicPosts = asyncReqHandler(async (_req, res) => {
 		);
 });
 
+// public posts of a specific user
 const getPublicPosts = asyncReqHandler(async (req, res) => {
 	const userId = req.params?.id;
 	if (!userId) throw new ApiError(400, "UserId is required");
 	const posts = await Post.find({
 		$and: [{ isPublic: true }, { author: userId }],
-	});
+	}).select(postExcludedFields);
 	return res
 		.status(200)
 		.json(
 			new ApiResponse("Succesfully fetched all public posts", { posts }, 200),
 		);
 });
+
+// public and private post of loggedin user
 const getAllPosts = asyncReqHandler(async (req, res) => {
 	const user = req.user;
 	if (!user) throw new ApiError(401, "Unauthorized request");
-	const posts = await Post.find({ author: user?._id });
+	const posts = await Post.find({ author: user?._id }).select(postExcludedFields);
 	return res
 		.status(200)
 		.json(new ApiResponse("Successfully fetched all posts", { posts }, 200));
@@ -137,7 +159,7 @@ const getAllPosts = asyncReqHandler(async (req, res) => {
 const searchPosts = asyncReqHandler(async (req, res) => {
 	const searchText = req.query?.search;
 	if (!searchText) throw new ApiError(400, "search is required");
-	const posts = await Post.find({ $text: { $search: searchText } });
+	const posts = await Post.find({ $text: { $search: searchText } }).select(postExcludedFields);
 	return res
 		.status(200)
 		.json(new ApiResponse("Succesfully fetched search result", { posts }, 200));
@@ -151,4 +173,5 @@ export {
 	getPublicPosts,
 	getAllPosts,
 	searchPosts,
+	getPublicPostBySlug
 };

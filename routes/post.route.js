@@ -5,6 +5,7 @@ import {
 	searchPosts,
 	updateCoverImage,
 	updatePost,
+	getPublicPostBySlug
 } from "../controllers/post.controller.js";
 import { upload, verifyJWT } from "../middlewares/index.js";
 import { asyncReqHandler } from "../utils/index.js";
@@ -21,7 +22,8 @@ router
 	.get(verifyJWT, searchPosts); // DONE ✅
 
 router
-	.route("/:id")
+	.route("/:slug")
+	.get(getPublicPostBySlug) // DONE ✅
 	.put(verifyJWT, updatePost) // DONE ✅
 	.patch(
 		verifyJWT,
