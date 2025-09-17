@@ -21,6 +21,7 @@ const fileFilter = (_req, file, cb) => {
 		cb(new ApiError(400, "Only Image file is allowed"));
 	} else cb(null, true);
 };
+
 const upload = multer({ storage, limits, fileFilter });
 
 export { upload };
