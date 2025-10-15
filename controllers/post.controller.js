@@ -1,5 +1,8 @@
 import { Post } from "../models/index.js";
-import { postExcludedFields } from "../utils/constants.js";
+import {
+	postExcludedFields,
+	postSearchExcludedFields,
+} from "../utils/constants.js";
 import {
 	ApiError,
 	ApiResponse,
@@ -111,14 +114,8 @@ const getPublicPostBySlug = asyncReqHandler(async (req, res) => {
 
 	return res
 		.status(200)
-		.json(
-			new ApiResponse(
-				"Succesfully fetched the post",
-				{ post },
-				200,
-			),
-		);
-})
+		.json(new ApiResponse("Succesfully fetched the post", { post }, 200));
+});
 
 // all public posts
 const getAllPublicPosts = asyncReqHandler(async (_req, res) => {
@@ -148,7 +145,9 @@ const getPublicPosts = asyncReqHandler(async (req, res) => {
 const getAllPosts = asyncReqHandler(async (req, res) => {
 	const user = req.user;
 	if (!user) throw new ApiError(401, "Unauthorized request");
-	const posts = await Post.find({ author: user?._id }).select(postExcludedFields);
+	const posts = await Post.find({ author: user?._id }).select(
+		postExcludedFields,
+	);
 	return res
 		.status(200)
 		.json(new ApiResponse("Successfully fetched all posts", { posts }, 200));
@@ -159,7 +158,16 @@ const getAllPosts = asyncReqHandler(async (req, res) => {
 const searchPosts = asyncReqHandler(async (req, res) => {
 	const searchText = req.query?.search;
 	if (!searchText) throw new ApiError(400, "search is required");
-	const posts = await Post.find({ $text: { $search: searchText } }).select(postExcludedFields);
+	// const posts = await Post.find({ $text: { $search: searchText } }).select(postExcludedFields);
+	const posts = await Post.aggregate()
+		.search({
+			text: {
+				query: searchText,
+				path: ["title", "body"],
+			},
+		})
+		.project(postSearchExcludedFields);
+
 	return res
 		.status(200)
 		.json(new ApiResponse("Succesfully fetched search result", { posts }, 200));
@@ -173,5 +181,5 @@ export {
 	getPublicPosts,
 	getAllPosts,
 	searchPosts,
-	getPublicPostBySlug
+	getPublicPostBySlug,
 };

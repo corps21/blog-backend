@@ -2,10 +2,10 @@ import { Router } from "express";
 import {
 	createPost,
 	getAllPublicPosts,
+	getPublicPostBySlug,
 	searchPosts,
 	updateCoverImage,
 	updatePost,
-	getPublicPostBySlug
 } from "../controllers/post.controller.js";
 import { upload, verifyJWT } from "../middlewares/index.js";
 import { asyncReqHandler } from "../utils/index.js";
