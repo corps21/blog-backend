@@ -3,6 +3,7 @@ import { getAllPosts, getPublicPosts } from "../controllers/post.controller.js";
 import {
 	changeUserPassword,
 	getCurrentUser,
+	getUser,
 	loginUser,
 	logoutUser,
 	refreshAccessToken,
@@ -37,6 +38,7 @@ router
 		asyncReqHandler(upload.single("avatar")),
 		updateAvatar,
 	) // DONE ✅
+	.get("/:id", getUser) // DONE ✅
 	.get("/:id/posts", verifyJWT, getPublicPosts); // DONE ✅
 
 export default router;
