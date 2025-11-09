@@ -22,9 +22,8 @@ router.post("/logout", asyncReqHandler(verifyJWT), asyncReqHandler(logoutUser));
 
 // TODO: check routes
 router
-	.route("/", asyncReqHandler(verifyJWT))
-	.get("/", asyncReqHandler(getCurrentUser))
-	.put("/", asyncReqHandler(updateUserDetails));
+	.get("/",asyncReqHandler(verifyJWT),asyncReqHandler(getCurrentUser))
+	.put("/",asyncReqHandler(verifyJWT),asyncReqHandler(updateUserDetails));
 
 router.post(
 	"/password",
