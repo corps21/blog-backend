@@ -171,17 +171,17 @@ const getCurrentUser = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Successfully fetched current user", { user }, 200));
 });
 
-const getUser = asyncReqHandler(async (req,res) => {
+const getUser = asyncReqHandler(async (req, res) => {
 	const userId = req.params?.id;
-	if(!userId) throw new ApiError(400, "Invalid userId");
+	if (!userId) throw new ApiError(400, "Invalid userId");
 
 	const user = await User.findById(userId).select(userExcludedFields);
-	if(!user) throw new ApiError(404, "User not found");
+	if (!user) throw new ApiError(404, "User not found");
 
 	res
 		.status(200)
-		.json(new ApiResponse("Successfully fetch user", {user}, 200));
-})
+		.json(new ApiResponse("Successfully fetch user", { user }, 200));
+});
 
 const changeUserPassword = asyncReqHandler(async (req, res) => {
 	const { oldPassword, newPassword } = req.body;
@@ -274,5 +274,5 @@ export {
 	changeUserPassword,
 	updateUserDetails,
 	updateAvatar,
-	getUser
+	getUser,
 };

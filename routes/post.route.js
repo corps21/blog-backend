@@ -2,8 +2,10 @@ import { Router } from "express";
 import {
 	createPost,
 	getAllPublicPosts,
+	getPostSummary,
 	getPublicPostBySlug,
 	searchPosts,
+	suggestPostsSemantic,
 	updateCoverImage,
 	updatePost,
 } from "../controllers/post.controller.js";
@@ -19,7 +21,8 @@ router.get("/public", getAllPublicPosts); // DONE ✅
 router
 	.route("/")
 	.post(verifyJWT, createPost) // DONE ✅
-	.get(verifyJWT, searchPosts); // DONE ✅
+	.get(verifyJWT, searchPosts) // DONE ✅
+	.get(verifyJWT, suggestPostsSemantic);
 
 router
 	.route("/:slug")
@@ -31,4 +34,5 @@ router
 		updateCoverImage,
 	); // DONE ✅
 
+router.get("/:slug/summary", verifyJWT, getPostSummary);
 export default router;

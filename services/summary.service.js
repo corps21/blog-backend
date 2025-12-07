@@ -1,4 +1,4 @@
-import { tryCatchWrapper } from "../utils";
+import { tryCatchWrapper } from "../utils/index.js";
 
 const MODEL = "models/gemini-2.5-flash";
 const BASE_URL =
@@ -42,9 +42,14 @@ class SummaryService {
 			headers,
 			body,
 		});
-        const summaryData = await summaryResponse.json()
+		const summaryData = await summaryResponse.json();
 		return summaryData;
 	});
 }
 
-export const summaryService = new SummaryService(BASE_URL, process.env.GEMINI_API_KEY, MODEL, SYSTEM_INSTRUCTION);
+export const summaryService = new SummaryService(
+	BASE_URL,
+	process.env.GEMINI_API_KEY,
+	MODEL,
+	SYSTEM_INSTRUCTION,
+);

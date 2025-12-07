@@ -1,4 +1,6 @@
 import { Post } from "../models/index.js";
+import { embeddingService } from "../services/embedding.service.js";
+import { summaryService } from "../services/summary.service.js";
 import {
 	postExcludedFields,
 	postSearchExcludedFields,
@@ -153,8 +155,7 @@ const getAllPosts = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Successfully fetched all posts", { posts }, 200));
 });
 
-// try aggregate
-// only give author info, title, cover image
+// TODO: it should not show private posts
 const searchPosts = asyncReqHandler(async (req, res) => {
 	const searchText = req.query?.search;
 	if (!searchText) throw new ApiError(400, "search is required");
@@ -173,6 +174,37 @@ const searchPosts = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Succesfully fetched search result", { posts }, 200));
 });
 
+const getPostSummary = asyncReqHandler(async (req, res) => {
+	const slug = req.params?.slug;
+	if (!slug) throw new ApiError("400", "slug is required");
+
+	const post = await Post.findOne({ slug });
+	if (!post) throw new ApiError("404", "Post not found");
+
+	if (!post.isPublic) throw new ApiError("403", "Unauthorized Access");
+
+	const summary = await summaryService.getSummary(post.body);
+	if (!summary)
+		throw new ApiError("500", "Something went wrong : Summary Service");
+
+	return res
+		.status(200)
+		.json(new ApiResponse("Sucessfully summarized the post", { summary }, 200));
+});
+
+// TODO: convert post to embedding and compare
+const suggestPostsSemantic = asyncReqHandler(async () => {
+	const searchText = req.query?.search;
+	if (!searchText) throw new ApiError(400, "search is required");
+	const textEmbedding = await embeddingService.getEmbedding(searchPosts);
+	if (!textEmbedding)
+		throw new ApiError("500", "Something went wrong : Summary Service");
+
+	return res
+		.status(200)
+		.json(new ApiResponse("Sucessfully summarized the post", { textEmbedding }, 200));
+});
+
 export {
 	createPost,
 	updatePost,
@@ -182,4 +214,6 @@ export {
 	getAllPosts,
 	searchPosts,
 	getPublicPostBySlug,
+	getPostSummary,
+	suggestPostsSemantic,
 };
