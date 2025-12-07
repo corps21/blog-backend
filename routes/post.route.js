@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
 	createPost,
+	deletePost,
 	getAllPublicPosts,
 	getPostSummary,
 	getPublicPostBySlug,
@@ -28,6 +29,7 @@ router
 	.route("/:slug")
 	.get(getPublicPostBySlug) // DONE ✅
 	.put(verifyJWT, updatePost) // DONE ✅
+	.delete(verifyJWT, deletePost) // DONE ✅
 	.patch(
 		verifyJWT,
 		asyncReqHandler(upload.single("coverImage")),

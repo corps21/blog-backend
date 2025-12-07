@@ -69,6 +69,22 @@ const updatePost = asyncReqHandler(async (req, res) => {
 		);
 });
 
+const deletePost = asyncReqHandler(async (req, res) => {
+	const user = req?.user;
+
+	const slug = req.params?.slug;
+	if (!slug) throw new ApiError(400, "slug is required");
+
+	const isDeleted = await Post.findOneAndDelete({
+		$and: [{ slug }, { author: user?._id }],
+	});
+	if (!isDeleted) throw new ApiError(404, "Post not found");
+
+	return res
+		.status(200)
+		.json(new ApiResponse("Succesfully deleted the post", {}, 200));
+});
+
 const updateCoverImage = asyncReqHandler(async (req, res) => {
 	const user = req?.user;
 
@@ -202,7 +218,13 @@ const suggestPostsSemantic = asyncReqHandler(async () => {
 
 	return res
 		.status(200)
-		.json(new ApiResponse("Sucessfully summarized the post", { textEmbedding }, 200));
+		.json(
+			new ApiResponse(
+				"Sucessfully summarized the post",
+				{ textEmbedding },
+				200,
+			),
+		);
 });
 
 export {
@@ -215,5 +237,6 @@ export {
 	searchPosts,
 	getPublicPostBySlug,
 	getPostSummary,
+	deletePost,
 	suggestPostsSemantic,
 };
