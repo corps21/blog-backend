@@ -2,7 +2,6 @@ import { Post } from "../models/index.js";
 import { embeddingService } from "../services/embedding.service.js";
 import { summaryService } from "../services/summary.service.js";
 import {
-	postExcludedFields,
 	postSearchExcludedFields,
 } from "../utils/constants.js";
 import {
@@ -17,6 +16,7 @@ const createPost = asyncReqHandler(async (req, res) => {
 	const user = req.user;
 	const { title, slug, body, isPublic } = req.body;
 
+	// TODO: can be removed but will not throw error when duplicate is found
 	const otherPostWithSameSlug = await Post.findOne({ slug });
 	if (otherPostWithSameSlug)
 		throw new ApiError(400, "Post exists with same slug");
@@ -24,14 +24,17 @@ const createPost = asyncReqHandler(async (req, res) => {
 	if ([title, slug].some((field) => !field))
 		throw new ApiError(400, "All necessary fields are required");
 
-	const post = await Post.create({
+	const createdPost = await Post.create({
 		title,
 		slug,
 		body,
 		isPublic,
 		author: user._id,
-	}).select(postExcludedFields);
-	if (!post) throw new ApiError(500, "Error while creating the post");
+	});
+	if (!createdPost) throw new ApiError(500, "Error while creating the post");
+
+	const post = await Post.findById(createdPost._id);
+	if (!post) throw new ApiError(404, "Post not found");
 
 	return res
 		.status(201)
@@ -48,7 +51,7 @@ const updatePost = asyncReqHandler(async (req, res) => {
 
 	const post = await Post.findOne({
 		$and: [{ slug }, { author: user?._id }],
-	}).select(postExcludedFields);
+	})
 	if (!post) throw new ApiError(404, "Post not found");
 
 	post.title = title ?? post.title;
@@ -127,7 +130,7 @@ const updateCoverImage = asyncReqHandler(async (req, res) => {
 const getPublicPostBySlug = asyncReqHandler(async (req, res) => {
 	const slug = req.params?.slug;
 	if (!slug) throw new ApiError(400, "slug is required");
-	const post = await Post.findOne({ slug }).select(postExcludedFields);
+	const post = await Post.findOne({ slug })
 	if (!post) throw new ApiError(404, "Post not found");
 
 	return res
@@ -137,7 +140,7 @@ const getPublicPostBySlug = asyncReqHandler(async (req, res) => {
 
 // all public posts
 const getAllPublicPosts = asyncReqHandler(async (_req, res) => {
-	const posts = await Post.find({ isPublic: true }).select(postExcludedFields);
+	const posts = await Post.find({ isPublic: true })
 	return res
 		.status(200)
 		.json(
@@ -151,7 +154,7 @@ const getPublicPosts = asyncReqHandler(async (req, res) => {
 	if (!userId) throw new ApiError(400, "UserId is required");
 	const posts = await Post.find({
 		$and: [{ isPublic: true }, { author: userId }],
-	}).select(postExcludedFields);
+	})
 	return res
 		.status(200)
 		.json(
@@ -163,9 +166,7 @@ const getPublicPosts = asyncReqHandler(async (req, res) => {
 const getAllPosts = asyncReqHandler(async (req, res) => {
 	const user = req.user;
 	if (!user) throw new ApiError(401, "Unauthorized request");
-	const posts = await Post.find({ author: user?._id }).select(
-		postExcludedFields,
-	);
+	const posts = await Post.find({ author: user?._id })
 	return res
 		.status(200)
 		.json(new ApiResponse("Successfully fetched all posts", { posts }, 200));

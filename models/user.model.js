@@ -25,8 +25,14 @@ const userSchema = new Schema(
 		password: {
 			type: String,
 			required: true,
+			select: false,
 		},
-		refreshToken: String,
+		refreshToken: {
+			type: String,
+			select: false,
+		},
+		createdAt: { type: Date, select: false },
+		updatedAt: { type: Date, select: false },
 	},
 	{ timestamps: true },
 );
