@@ -1,4 +1,5 @@
 import { pipeline } from "@xenova/transformers"
+import { tryCatchWrapper } from "../utils/index.js";
 
 class EmbeddingService {
 	getEmbedding = tryCatchWrapper(async (text) => {
