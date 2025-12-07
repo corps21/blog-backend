@@ -13,6 +13,13 @@ const postSchema = new Schema(
 			trim: true,
 			unique: true,
 		},
+		embedding: {
+			type: [Number],
+			default: [],
+			index: "knnVector",
+			dimensions: 768,
+			similarity: "consine"
+		},
 		body: {
 			type: String,
 			maxLength: 30000,
@@ -34,7 +41,6 @@ const postSchema = new Schema(
 	{ timestamps: true },
 );
 
-postSchema.index({ title: "text" });
 const Post = model("post", postSchema);
 
 export { Post };

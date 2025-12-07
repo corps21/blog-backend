@@ -22,11 +22,15 @@ const createPost = asyncReqHandler(async (req, res) => {
 	if ([title, slug].some((field) => !field))
 		throw new ApiError(400, "All necessary fields are required");
 
+	const embedding = await embeddingService.getEmbedding(body)
+	if(!embedding.length) throw new ApiError("500", "Error while creating embeddings for post")
+
 	const createdPost = await Post.create({
 		title,
 		slug,
 		body,
 		isPublic,
+		embedding,
 		author: user._id,
 	});
 	if (!createdPost) throw new ApiError(500, "Error while creating the post");
@@ -39,6 +43,7 @@ const createPost = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Post created successfully", { post }, 201));
 });
 
+// TODO: remove unnecessary updation of body 
 const updatePost = asyncReqHandler(async (req, res) => {
 	const user = req?.user;
 	const slug = req.params?.slug;
@@ -55,6 +60,7 @@ const updatePost = asyncReqHandler(async (req, res) => {
 	post.title = title ?? post.title;
 	post.body = body ?? post.body;
 	post.isPublic = isPublic ?? post.isPublic;
+	post.embedding = body ? await embeddingService.getEmbedding(body) : post.embedding
 
 	// Another approach
 	// const updates = JSON.parse(JSON.stringify({title,body, isPublic}))
