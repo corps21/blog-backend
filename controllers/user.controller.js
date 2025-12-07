@@ -1,9 +1,5 @@
 import { User } from "../models/index.js";
 import {
-	userExcludedFields,
-	userExcludedFieldsForLogin,
-} from "../utils/constants.js";
-import {
 	ApiError,
 	ApiResponse,
 	asyncReqHandler,
@@ -67,7 +63,7 @@ const registerUser = asyncReqHandler(async (req, res) => {
 
 	if (!user) throw new ApiError(500, "Error while creating user");
 
-	const createdUser = await User.findById(user._id).select(userExcludedFields);
+	const createdUser = await User.findById(user._id);
 	res
 		.status(201)
 		.json(new ApiResponse("Successfully created", createdUser, 201));
@@ -83,7 +79,7 @@ const loginUser = asyncReqHandler(async (req, res) => {
 	if (!password) throw new ApiError(400, "All fields are required");
 
 	const user = await User.findOne({ $or: [{ email }, { userName }] }).select(
-		userExcludedFieldsForLogin,
+		"+password",
 	);
 	if (!user) throw new ApiError(404, "User not found");
 
@@ -175,7 +171,7 @@ const getUser = asyncReqHandler(async (req, res) => {
 	const userId = req.params?.id;
 	if (!userId) throw new ApiError(400, "Invalid userId");
 
-	const user = await User.findById(userId).select(userExcludedFields);
+	const user = await User.findById(userId);
 	if (!user) throw new ApiError(404, "User not found");
 
 	res

@@ -1,5 +1,4 @@
 import { User } from "../models/index.js";
-import { userExcludedFields } from "../utils/constants.js";
 import {
 	ApiError,
 	asyncReqHandler,
@@ -17,7 +16,7 @@ const verifyJWT = asyncReqHandler(async (req, _, next) => {
 		process.env.ACCESS_TOKEN_SECRET,
 	);
 	if (!decodedUser) throw new ApiError(401, "Invalid access token");
-	const user = await User.findById(decodedUser._id).select(userExcludedFields);
+	const user = await User.findById(decodedUser._id);
 	if (!user) throw new ApiError(404, "User not found");
 	req.user = user;
 	next();

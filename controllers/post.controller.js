@@ -1,9 +1,7 @@
 import { Post } from "../models/index.js";
 import { embeddingService } from "../services/embedding.service.js";
 import { summaryService } from "../services/summary.service.js";
-import {
-	postSearchExcludedFields,
-} from "../utils/constants.js";
+import { postSearchExcludedFields } from "../utils/constants.js";
 import {
 	ApiError,
 	ApiResponse,
@@ -51,7 +49,7 @@ const updatePost = asyncReqHandler(async (req, res) => {
 
 	const post = await Post.findOne({
 		$and: [{ slug }, { author: user?._id }],
-	})
+	});
 	if (!post) throw new ApiError(404, "Post not found");
 
 	post.title = title ?? post.title;
@@ -130,7 +128,7 @@ const updateCoverImage = asyncReqHandler(async (req, res) => {
 const getPublicPostBySlug = asyncReqHandler(async (req, res) => {
 	const slug = req.params?.slug;
 	if (!slug) throw new ApiError(400, "slug is required");
-	const post = await Post.findOne({ slug })
+	const post = await Post.findOne({ slug });
 	if (!post) throw new ApiError(404, "Post not found");
 
 	return res
@@ -140,7 +138,7 @@ const getPublicPostBySlug = asyncReqHandler(async (req, res) => {
 
 // all public posts
 const getAllPublicPosts = asyncReqHandler(async (_req, res) => {
-	const posts = await Post.find({ isPublic: true })
+	const posts = await Post.find({ isPublic: true });
 	return res
 		.status(200)
 		.json(
@@ -154,7 +152,7 @@ const getPublicPosts = asyncReqHandler(async (req, res) => {
 	if (!userId) throw new ApiError(400, "UserId is required");
 	const posts = await Post.find({
 		$and: [{ isPublic: true }, { author: userId }],
-	})
+	});
 	return res
 		.status(200)
 		.json(
@@ -166,7 +164,7 @@ const getPublicPosts = asyncReqHandler(async (req, res) => {
 const getAllPosts = asyncReqHandler(async (req, res) => {
 	const user = req.user;
 	if (!user) throw new ApiError(401, "Unauthorized request");
-	const posts = await Post.find({ author: user?._id })
+	const posts = await Post.find({ author: user?._id });
 	return res
 		.status(200)
 		.json(new ApiResponse("Successfully fetched all posts", { posts }, 200));
