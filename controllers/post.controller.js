@@ -14,11 +14,6 @@ const createPost = asyncReqHandler(async (req, res) => {
 	const user = req.user;
 	const { title, slug, body, isPublic } = req.body;
 
-	// TODO: can be removed but will not throw error when duplicate is found
-	const otherPostWithSameSlug = await Post.findOne({ slug });
-	if (otherPostWithSameSlug)
-		throw new ApiError(400, "Post exists with same slug");
-
 	if ([title, slug].some((field) => !field))
 		throw new ApiError(400, "All necessary fields are required");
 
