@@ -14,12 +14,14 @@ const userSchema = new Schema(
 			trim: true,
 			required: true,
 			index: true,
+			unique:true
 		},
 		userName: {
 			type: String,
 			trim: true,
 			required: true,
 			index: true,
+			unique:true
 		},
 		avatarUrl: String,
 		password: {
