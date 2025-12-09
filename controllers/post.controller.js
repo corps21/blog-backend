@@ -43,7 +43,6 @@ const createPost = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Post created successfully", { post }, 201));
 });
 
-// TODO: remove unnecessary updation of body 
 const updatePost = asyncReqHandler(async (req, res) => {
 	const user = req?.user;
 	const slug = req.params?.slug;
@@ -176,19 +175,19 @@ const getAllPosts = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Successfully fetched all posts", { posts }, 200));
 });
 
-// TODO: it should not show private posts
 const searchPosts = asyncReqHandler(async (req, res) => {
 	const searchText = req.query?.search;
 	if (!searchText) throw new ApiError(400, "search is required");
 	// const posts = await Post.find({ $text: { $search: searchText } }).select(postExcludedFields);
 	const posts = await Post.aggregate()
-		.search({
-			text: {
-				query: searchText,
-				path: ["title", "body"],
-			},
-		})
-		.project(postSearchExcludedFields);
+	.search({
+		text: {
+			query: searchText,
+			path: ["title", "body"],
+		},
+	})
+	.match({isPublic: true})
+	.project(postSearchExcludedFields);
 
 	return res
 		.status(200)
@@ -213,7 +212,6 @@ const getPostSummary = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Sucessfully summarized the post", { summary }, 200));
 });
 
-// TODO: convert post to embedding and compare
 const suggestPostsSemantic = asyncReqHandler(async () => {
 	const searchText = req.query?.search;
 	if (!searchText) throw new ApiError(400, "search is required");

@@ -18,7 +18,8 @@ const postSchema = new Schema(
 			default: [],
 			index: "knnVector",
 			dimensions: 768,
-			similarity: "consine"
+			similarity: "consine",
+			select:false
 		},
 		body: {
 			type: String,
