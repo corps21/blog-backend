@@ -34,7 +34,6 @@ const postSchema = new Schema(
 		isPublic: {
 			type: Boolean,
 			default: true,
-			select: false,
 		},
 		createdAt: { type: Date, select: false },
 		updatedAt: { type: Date, select: false },

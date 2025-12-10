@@ -43,7 +43,7 @@ const updatePost = asyncReqHandler(async (req, res) => {
 	const slug = req.params?.slug;
 	const { title, body, isPublic } = req.body;
 
-	if ([title, body, isPublic].every((field) => !field))
+	if ([title, body, isPublic].every((field) => field === undefined || field === null))
 		throw new ApiError(400, "Atleast one field is required");
 
 	const post = await Post.findOne({
