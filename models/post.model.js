@@ -19,7 +19,7 @@ const postSchema = new Schema(
 			index: "knnVector",
 			dimensions: 768,
 			similarity: "consine",
-			select:false
+			select: false,
 		},
 		body: {
 			type: String,
@@ -35,10 +35,17 @@ const postSchema = new Schema(
 			type: Boolean,
 			default: true,
 		},
-		createdAt: { type: Date, select: false },
-		updatedAt: { type: Date, select: false },
 	},
-	{ timestamps: true },
+	{
+		timestamps: true,
+		toJSON: {
+			transform: (_, ret) => {
+				delete ret.createdAt;
+				delete ret.updatedAt;
+				return ret;
+			},
+		},
+	},
 );
 
 const Post = model("post", postSchema);

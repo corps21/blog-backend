@@ -17,8 +17,9 @@ const createPost = asyncReqHandler(async (req, res) => {
 	if ([title, slug].some((field) => !field))
 		throw new ApiError(400, "All necessary fields are required");
 
-	const embedding = await embeddingService.getEmbedding(body)
-	if(!embedding.length) throw new ApiError("500", "Error while creating embeddings for post")
+	const embedding = await embeddingService.getEmbedding(body);
+	if (!embedding.length)
+		throw new ApiError("500", "Error while creating embeddings for post");
 
 	const createdPost = await Post.create({
 		title,
@@ -43,7 +44,11 @@ const updatePost = asyncReqHandler(async (req, res) => {
 	const slug = req.params?.slug;
 	const { title, body, isPublic } = req.body;
 
-	if ([title, body, isPublic].every((field) => field === undefined || field === null))
+	if (
+		[title, body, isPublic].every(
+			(field) => field === undefined || field === null,
+		)
+	)
 		throw new ApiError(400, "Atleast one field is required");
 
 	const post = await Post.findOne({
@@ -54,7 +59,9 @@ const updatePost = asyncReqHandler(async (req, res) => {
 	post.title = title ?? post.title;
 	post.body = body ?? post.body;
 	post.isPublic = isPublic ?? post.isPublic;
-	post.embedding = body ? await embeddingService.getEmbedding(body) : post.embedding
+	post.embedding = body
+		? await embeddingService.getEmbedding(body)
+		: post.embedding;
 
 	// Another approach
 	// const updates = JSON.parse(JSON.stringify({title,body, isPublic}))
@@ -175,14 +182,14 @@ const searchPosts = asyncReqHandler(async (req, res) => {
 	if (!searchText) throw new ApiError(400, "search is required");
 	// const posts = await Post.find({ $text: { $search: searchText } }).select(postExcludedFields);
 	const posts = await Post.aggregate()
-	.search({
-		text: {
-			query: searchText,
-			path: ["title", "body"],
-		},
-	})
-	.match({isPublic: true})
-	.project(postSearchExcludedFields);
+		.search({
+			text: {
+				query: searchText,
+				path: ["title", "body"],
+			},
+		})
+		.match({ isPublic: true })
+		.project(postSearchExcludedFields);
 
 	return res
 		.status(200)

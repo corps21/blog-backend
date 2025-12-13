@@ -1,4 +1,4 @@
 import { Post } from "./post.model.js";
-import { User } from "./user.model.js";
+import { AnonUser, User } from "./user.model.js";
 
-export { User, Post };
+export { User, Post, AnonUser };
