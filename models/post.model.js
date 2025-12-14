@@ -28,7 +28,7 @@ const postSchema = new Schema(
 		coverImageUrl: String,
 		author: {
 			type: Schema.Types.ObjectId,
-			ref: "user",
+			ref: "users",
 			required: true,
 		},
 		isPublic: {
