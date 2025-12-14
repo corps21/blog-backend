@@ -156,7 +156,10 @@ const refreshAccessToken = asyncReqHandler(async (req, res) => {
 	if (!decodedUser) throw new ApiError(401, "Invalid token");
 
 	// Check against action after deletion of user
-	const user = await User.findById(decodedUser._id);
+	const user =
+		decodedUser.kind === "User"
+			? await User.findById(decodedUser._id)
+			: await AnonUser.findById(decodedUser._id);
 	if (!user) throw new ApiError(404, "User not found");
 
 	const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
