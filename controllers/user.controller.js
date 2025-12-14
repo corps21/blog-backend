@@ -1,4 +1,4 @@
-import {User} from "../models/index.js";
+import { AnonUser, User } from "../models/index.js";
 import {
 	ApiError,
 	ApiResponse,
@@ -28,9 +28,8 @@ function clearCookies(
 	});
 }
 
-async function generateAccessAndRefreshToken(userId) {
-	// NOTE: The caller must validate *userId* before calling this function
-	const user = await User.findById(userId);
+async function _generateAccessAndRefreshToken(user) {
+	// NOTE: The caller must validate *user* before calling this function
 	const promises = [user.generateAccessToken(), user.generateRefreshToken()];
 	const [accessToken, refreshToken] = await Promise.all(promises);
 
@@ -43,7 +42,7 @@ async function generateAccessAndRefreshToken(userId) {
 
 	return { accessToken, refreshToken };
 }
-
+// TODO: also move the registering logic out of the user.controller to auth.controller
 const registerUser = asyncReqHandler(async (req, res) => {
 	const { fullName, email, userName, password } = req.body;
 
@@ -66,6 +65,30 @@ const registerUser = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Successfully created", createdUser, 201));
 });
 
+const registerAnonUser = asyncReqHandler(async (_, res) => {
+	const user = await AnonUser.create({});
+	if (!user) throw new ApiError(500, "Error while creating user");
+
+	const { accessToken, refreshToken } =
+		await _generateAccessAndRefreshToken(user);
+
+	const options = {
+		httpOnly: true,
+		secure: true,
+	};
+
+	res
+		.status(200)
+		.cookie("refreshToken", refreshToken, options)
+		.json(
+			new ApiResponse(
+				"Successfully logged in",
+				{ user, accessToken: accessToken },
+				200,
+			),
+		);
+});
+
 const loginUser = asyncReqHandler(async (req, res) => {
 	const { email, userName, password } = req.body;
 
@@ -84,9 +107,8 @@ const loginUser = asyncReqHandler(async (req, res) => {
 
 	if (!isPasswordCorrect) throw new ApiError(400, "Password is incorrect");
 
-	const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
-		user._id,
-	);
+	const { accessToken, refreshToken } =
+		await _generateAccessAndRefreshToken(user);
 
 	const options = {
 		httpOnly: true,
@@ -138,7 +160,7 @@ const refreshAccessToken = asyncReqHandler(async (req, res) => {
 	if (!user) throw new ApiError(404, "User not found");
 
 	const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-		await generateAccessAndRefreshToken(user._id);
+		await _generateAccessAndRefreshToken(user);
 
 	const options = {
 		httpOnly: true,
@@ -258,6 +280,8 @@ const updateAvatar = asyncReqHandler(async (req, res) => {
 		);
 });
 
+// TODO: Conversion of Anon Users to Registered Users
+
 export {
 	registerUser,
 	loginUser,
@@ -268,4 +292,5 @@ export {
 	updateUserDetails,
 	updateAvatar,
 	getUser,
+	registerAnonUser,
 };

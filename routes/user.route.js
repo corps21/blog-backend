@@ -7,6 +7,7 @@ import {
 	loginUser,
 	logoutUser,
 	refreshAccessToken,
+	registerAnonUser,
 	registerUser,
 	updateAvatar,
 	updateUserDetails,
@@ -20,7 +21,8 @@ const router = Router();
 router
 	.post("/register", registerUser) // DONE ✅
 	.post("/refresh-token", refreshAccessToken) // DONE ✅
-	.post("/login", loginUser); // DONE ✅
+	.post("/login", loginUser) // DONE ✅
+	.post("/sessions", registerAnonUser); // DONE ✅
 
 // Protected route
 router

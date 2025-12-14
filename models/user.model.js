@@ -45,12 +45,14 @@ baseUserSchema.methods.generateAccessToken = tryCatchWrapper(async function () {
 	let details = {};
 	if (this.kind === "User") {
 		details = {
+			kind: this.kind,
 			userName: this.userName,
 			email: this.email,
 			_id: this._id,
 		};
 	} else {
 		details = {
+			kind: this.kind,
 			_id: this._id,
 		};
 	}
@@ -68,6 +70,7 @@ baseUserSchema.methods.generateRefreshToken = tryCatchWrapper(
 		return await promisedJWTSign(
 			{
 				_id: this._id,
+				kind: this.kind,
 			},
 			process.env.REFRESH_TOKEN_SECRET,
 			{ expiresIn: TOKEN_EXPIRY },
@@ -90,14 +93,18 @@ export const User = BaseUser.discriminator(
 			type: String,
 			trim: true,
 			required: true,
-			index: true,
+			index: {
+				partialFilterExpression: { $exists: true },
+			},
 			unique: true,
 		},
 		userName: {
 			type: String,
 			trim: true,
 			required: true,
-			index: true,
+			index: {
+				partialFilterExpression: { $exists: true },
+			},
 			unique: true,
 		},
 		avatarUrl: String,
