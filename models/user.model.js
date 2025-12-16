@@ -78,6 +78,17 @@ baseUserSchema.methods.generateRefreshToken = tryCatchWrapper(
 	},
 );
 
+baseUserSchema.index({email: 1, userName: 1}, {
+	partialFilterExpression: {
+		email: {
+			$exists: true
+		},
+		userName: {
+			$exists:true
+		}
+	}
+})
+
 const BaseUser = model("user", baseUserSchema);
 
 export const AnonUser = BaseUser.discriminator("AnonUser", new Schema());
@@ -93,18 +104,14 @@ export const User = BaseUser.discriminator(
 			type: String,
 			trim: true,
 			required: true,
-			index: {
-				partialFilterExpression: { $exists: true },
-			},
+			index: true,
 			unique: true,
 		},
 		userName: {
 			type: String,
 			trim: true,
 			required: true,
-			index: {
-				partialFilterExpression: { $exists: true },
-			},
+			index: true,
 			unique: true,
 		},
 		avatarUrl: String,

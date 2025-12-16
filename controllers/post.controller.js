@@ -176,7 +176,7 @@ const getAllPosts = asyncReqHandler(async (req, res) => {
 		.status(200)
 		.json(new ApiResponse("Successfully fetched all posts", { posts }, 200));
 });
-
+// TODO: Make it work
 const searchPosts = asyncReqHandler(async (req, res) => {
 	const searchText = req.query?.search;
 	if (!searchText) throw new ApiError(400, "search is required");
@@ -213,7 +213,7 @@ const getPostSummary = asyncReqHandler(async (req, res) => {
 		.status(200)
 		.json(new ApiResponse("Sucessfully summarized the post", { summary }, 200));
 });
-
+// TODO: Complete it
 const suggestPostsSemantic = asyncReqHandler(async () => {
 	const searchText = req.query?.search;
 	if (!searchText) throw new ApiError(400, "search is required");

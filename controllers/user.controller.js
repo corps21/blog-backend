@@ -132,11 +132,15 @@ const loginUser = asyncReqHandler(async (req, res) => {
 const logoutUser = asyncReqHandler(async (req, res) => {
 	const user = req.user;
 
-	const updatedUser = await User.findByIdAndUpdate(
+	const updatedUser = user.kind === 'User' ? await User.findByIdAndUpdate(
 		user._id,
 		{ $unset: { refreshToken: "" } },
 		{ new: true },
-	);
+	) : await AnonUser.findByIdAndUpdate(
+		user._id,
+		{ $unset: { refreshToken: "" } },
+		{ new: true },
+	)
 	if (!updatedUser) throw new ApiError(500, "Error while updating user");
 
 	clearCookies(res, ["refreshToken"]);

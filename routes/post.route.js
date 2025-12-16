@@ -10,10 +10,12 @@ import {
 	updateCoverImage,
 	updatePost,
 } from "../controllers/post.controller.js";
-import { upload, verifyJWT } from "../middlewares/index.js";
+import { denyAnonymous, upload, verifyJWT } from "../middlewares/index.js";
 import { asyncReqHandler } from "../utils/index.js";
 
 const router = Router();
+
+// TODO make new route for anon users and create a middleware to route to anon user route
 
 // Public route
 router.get("/public", getAllPublicPosts); // DONE ✅
@@ -21,7 +23,7 @@ router.get("/public", getAllPublicPosts); // DONE ✅
 // Protected route
 router
 	.route("/")
-	.post(verifyJWT, createPost) // DONE ✅
+	.post(verifyJWT, denyAnonymous, createPost) // DONE ✅
 	.get(verifyJWT, searchPosts) // DONE ✅
 	.get(verifyJWT, suggestPostsSemantic);
 
