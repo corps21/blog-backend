@@ -78,16 +78,19 @@ baseUserSchema.methods.generateRefreshToken = tryCatchWrapper(
 	},
 );
 
-baseUserSchema.index({email: 1, userName: 1}, {
-	partialFilterExpression: {
-		email: {
-			$exists: true
+baseUserSchema.index(
+	{ email: 1, userName: 1 },
+	{
+		partialFilterExpression: {
+			email: {
+				$exists: true,
+			},
+			userName: {
+				$exists: true,
+			},
 		},
-		userName: {
-			$exists:true
-		}
-	}
-})
+	},
+);
 
 const BaseUser = model("user", baseUserSchema);
 

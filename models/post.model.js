@@ -23,7 +23,6 @@ const postSchema = new Schema(
 		},
 		body: {
 			type: String,
-			maxLength: 30000,
 		},
 		coverImageUrl: String,
 		author: {

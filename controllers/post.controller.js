@@ -1,3 +1,5 @@
+import { convert } from "html-to-text";
+import DOMPurify from "isomorphic-dompurify";
 import { Post } from "../models/index.js";
 import { embeddingService } from "../services/embedding.service.js";
 import { summaryService } from "../services/summary.service.js";
@@ -17,14 +19,17 @@ const createPost = asyncReqHandler(async (req, res) => {
 	if ([title, slug].some((field) => !field))
 		throw new ApiError(400, "All necessary fields are required");
 
-	const embedding = await embeddingService.getEmbedding(body);
+	const cleanBody = DOMPurify.sanitize(body);
+	const strippedBody = convert(cleanBody);
+	const embedding = await embeddingService.getEmbedding(strippedBody);
+
 	if (!embedding.length)
 		throw new ApiError("500", "Error while creating embeddings for post");
 
 	const createdPost = await Post.create({
 		title,
 		slug,
-		body,
+		body: cleanBody,
 		isPublic,
 		embedding,
 		author: user._id,
@@ -56,12 +61,21 @@ const updatePost = asyncReqHandler(async (req, res) => {
 	});
 	if (!post) throw new ApiError(404, "Post not found");
 
-	post.title = title ?? post.title;
-	post.body = body ?? post.body;
-	post.isPublic = isPublic ?? post.isPublic;
-	post.embedding = body
-		? await embeddingService.getEmbedding(body)
-		: post.embedding;
+	if (title) {
+		post.title = title;
+	}
+
+	if (isPublic !== undefined) {
+		post.isPublic = isPublic;
+	}
+
+	if (body) {
+		const cleanBody = DOMPurify.sanitize(body);
+		const strippedBody = convert(cleanBody);
+		const embedding = await embeddingService.getEmbedding(strippedBody);
+		post.body = cleanBody;
+		post.embedding = embedding;
+	}
 
 	// Another approach
 	// const updates = JSON.parse(JSON.stringify({title,body, isPublic}))
