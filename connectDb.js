@@ -5,7 +5,7 @@ export default function connectDb(URI, password) {
 		if (process.env.MONGO_ENV === "env") {
 			return connect(URI);
 		}
-		const newURI = URI.replace("<db-password>", encodeURIComponent(password));
+		const newURI = URI.replace("<db_password>", password);
 		return connect(newURI);
 	};
 }

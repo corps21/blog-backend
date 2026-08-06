@@ -1,4 +1,4 @@
-import { pipeline } from "@xenova/transformers";
+import { pipeline } from "@huggingface/transformers";
 import { tryCatchWrapper } from "../utils/index.js";
 
 class EmbeddingService {
