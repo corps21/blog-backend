@@ -22,24 +22,25 @@ router
 	.post("/register", registerUser) // DONE ✅
 	.post("/refresh-token", refreshAccessToken) // DONE ✅
 	.post("/login", loginUser) // DONE ✅
-	.post("/sessions", registerAnonUser); // DONE ✅
+	.post("/anon-user", registerAnonUser); // DONE ✅
 
 // Protected route
 router
 	.route("/me")
 	.get(verifyJWT, getCurrentUser) // DONE ✅
-	.put(verifyJWT, updateUserDetails); // DONE ✅
+	.patch(verifyJWT, updateUserDetails); // DONE ✅
 
 router
 	.post("/logout", verifyJWT, logoutUser) // DONE ✅
 	.get("/posts", verifyJWT, getAllPosts) // DONE ✅
-	.post("/password", verifyJWT, changeUserPassword) // DONE ✅
-	.put(
+	.patch("/password", verifyJWT, changeUserPassword) // DONE ✅
+	.patch(
 		"/avatar",
 		verifyJWT,
 		asyncReqHandler(upload.single("avatar")),
 		updateAvatar,
 	) // DONE ✅
+	// TODO: need access control for these routes
 	.get("/:id", getUser) // DONE ✅
 	.get("/:id/posts", verifyJWT, getPublicPosts); // DONE ✅
 

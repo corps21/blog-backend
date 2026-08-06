@@ -30,9 +30,20 @@ const baseUserSchema = new Schema(
 baseUserSchema.pre(
 	"save",
 	tryCatchWrapper(async function () {
-		if (!this.isModified("password")) return;
-		this.password = await hash(this.password, Number(process.env.SALT_ROUNDS));
+		if (this.isModified("password")) {
+			this.password = await hash(this.password, Number(process.env.SALT_ROUNDS));
+		}
+
+		if (this.isModified("refreshToken") && this.refreshToken) {
+			this.refreshToken = await hash(this.refreshToken, Number(process.env.SALT_ROUNDS));
+		}
 	}),
+);
+
+baseUserSchema.methods.compareRefreshToken = tryCatchWrapper(
+	async function (refreshToken) {
+		return await compare(refreshToken, this.refreshToken);
+	},
 );
 
 baseUserSchema.methods.comparePassword = tryCatchWrapper(
