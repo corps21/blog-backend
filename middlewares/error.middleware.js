@@ -3,7 +3,7 @@ import { configDotenv } from "dotenv";
 configDotenv({
 	path: "../.env",
 });
-// TODO: refactor errorHandler to handle more specific error
+
 export function errorHandler(err, _req, res, _next) {
 	if (err.code === 11000) {
 		const field = Object.keys(err.keyPattern)[0];

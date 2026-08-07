@@ -42,7 +42,7 @@ async function _generateAccessAndRefreshToken(user) {
 
 	return { accessToken, refreshToken };
 }
-// TODO: also move the registering logic out of the user.controller to auth.controller
+
 const registerUser = asyncReqHandler(async (req, res) => {
 	const { fullName, email, userName, password } = req.body;
 
@@ -222,8 +222,6 @@ const getUser = asyncReqHandler(async (req, res) => {
 const changeUserPassword = asyncReqHandler(async (req, res) => {
 	const { oldPassword, newPassword } = req.body;
 	const user = await User.findById(req.user._id).select("+password");
-
-	console.log(oldPassword, newPassword);
 
 	if (!oldPassword || !newPassword)
 		throw new ApiError(400, "All fields are required");

@@ -6,7 +6,6 @@ import {
 	getPostSummary,
 	getPublicPostBySlug,
 	searchPosts,
-	suggestPostsSemantic,
 	updateCoverImage,
 	updatePost,
 } from "../controllers/post.controller.js";
@@ -22,8 +21,7 @@ router.get("/public", getAllPublicPosts); // DONE ✅
 router
 	.route("/")
 	.post(verifyJWT, denyAnonymous, createPost) // DONE ✅
-	// .get(verifyJWT, searchPosts) // DONE ✅
-	.get(verifyJWT, suggestPostsSemantic);
+	.get(verifyJWT, searchPosts) // DONE ✅
 
 router
 	.route("/:slug")

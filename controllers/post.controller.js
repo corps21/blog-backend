@@ -191,31 +191,67 @@ const getAllPosts = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Successfully fetched all posts", { posts }, 200));
 });
 
-// TODO: Hybrid Search
 const searchPosts = asyncReqHandler(async (req, res) => {
 	const searchText = req.query?.search;
 	if (!searchText) throw new ApiError(400, "search is required");
 
-	const posts = await Post.aggregate()
-		.search({
-			index: "post_search_index",
-			text: {
-				query: searchText,
-				path: ["title", "body"],
-				fuzzy: {
-					maxEdits: 2,
-					prefixLength: 1,
+	const searchTextEmbedding = await embeddingService.getEmbedding(searchText);
+	if (!searchTextEmbedding)
+		throw new ApiError("500", "Something went wrong : Embedding Service");
+
+	const posts = await Post.aggregate([
+		{
+			$rankFusion: {
+				input: {
+					pipelines: {
+						lexical: [
+							{
+								$search: {
+									index: "post_search_index",
+									text: {
+										query: searchText,
+										path: ["title", "body"],
+										fuzzy: {
+											maxEdits: 2,
+											prefixLength: 1,
+										}
+									}
+								}
+							},
+							{ $limit: 20 },
+						],
+						semantic: [
+							{
+								$vectorSearch: {
+									index: "post_vector_search_index",
+									path: "embedding",
+									queryVector: searchTextEmbedding,
+									numCandidates: 200,
+									limit: 20
+								},
+							}
+						],
+					},
+				},
+				combination: {
+					weights: {
+						lexical: 0.65,
+						semantic: 0.35,
+					},
 				},
 			},
-		})
-		.match({
-			isPublic: true,
-		})
-		.project({
-			...postSearchFields,
-			score: { $meta: "searchScore" },
-		})
-		.limit(10);
+		},
+
+		{
+			$match: {
+				isPublic: true,
+			},
+		},
+
+		{
+			$project: postSearchFields,
+		},
+	]);
 
 	return res
 		.status(200)
@@ -241,50 +277,6 @@ const getPostSummary = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Sucessfully summarized the post", { summary }, 200));
 });
 
-const suggestPostsSemantic = asyncReqHandler(async (req, res) => {
-	const searchText = req.query?.search;
-	if (!searchText) throw new ApiError(400, "search is required");
-
-	const textEmbedding = await embeddingService.getEmbedding(searchText);
-	if (!textEmbedding)
-		throw new ApiError("500", "Something went wrong : Embedding Service");
-
-	const posts = await Post.aggregate([
-		{
-			$vectorSearch: {
-				index: "post_vector_search_index",
-				path: "embedding",
-				queryVector: textEmbedding,
-				numCandidates: 200,
-				limit: 50,
-				filter: {
-					isPublic: true,
-				},
-			},
-		},
-		{
-			$addFields: {
-				score: { $meta: "vectorSearchScore" },
-			},
-		},
-		{
-			$match: {
-				score: { $gte: 0.35 },
-			},
-		},
-		{
-			$project: {
-				...postSearchFields,
-				score: 1,
-			},
-		},
-	]);
-
-	return res
-		.status(200)
-		.json(new ApiResponse("Sucessfully summarized the post", { posts }, 200));
-});
-
 export {
 	createPost,
 	updatePost,
@@ -295,6 +287,5 @@ export {
 	searchPosts,
 	getPublicPostBySlug,
 	getPostSummary,
-	deletePost,
-	suggestPostsSemantic,
+	deletePost
 };
