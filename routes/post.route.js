@@ -15,8 +15,6 @@ import { asyncReqHandler } from "../utils/index.js";
 
 const router = Router();
 
-// TODO make new route for anon users and create a middleware to route to anon user route
-
 // Public route
 router.get("/public", getAllPublicPosts); // DONE ✅
 

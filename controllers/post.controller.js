@@ -1,8 +1,8 @@
-import { convert } from "html-to-text";
 import DOMPurify from "isomorphic-dompurify";
 import { Post } from "../models/index.js";
 import { embeddingService } from "../services/embedding.service.js";
 import { summaryService } from "../services/summary.service.js";
+import { markdownService } from "../services/markdown.service.js";
 import { postSearchExcludedFields } from "../utils/constants.js";
 import {
 	ApiError,
@@ -20,7 +20,7 @@ const createPost = asyncReqHandler(async (req, res) => {
 		throw new ApiError(400, "All necessary fields are required");
 
 	const cleanBody = DOMPurify.sanitize(body);
-	const strippedBody = convert(cleanBody);
+	const strippedBody = await markdownService.convert(cleanBody);
 	const embedding = await embeddingService.getEmbedding(strippedBody);
 
 	if (!embedding.length)
@@ -71,7 +71,7 @@ const updatePost = asyncReqHandler(async (req, res) => {
 
 	if (body) {
 		const cleanBody = DOMPurify.sanitize(body);
-		const strippedBody = convert(cleanBody);
+		const strippedBody = await markdownService.convert(cleanBody);
 		const embedding = await embeddingService.getEmbedding(strippedBody);
 		post.body = cleanBody;
 		post.embedding = embedding;
@@ -190,20 +190,13 @@ const getAllPosts = asyncReqHandler(async (req, res) => {
 		.status(200)
 		.json(new ApiResponse("Successfully fetched all posts", { posts }, 200));
 });
-// TODO: Make it work
+
 const searchPosts = asyncReqHandler(async (req, res) => {
 	const searchText = req.query?.search;
 	if (!searchText) throw new ApiError(400, "search is required");
-	// const posts = await Post.find({ $text: { $search: searchText } }).select(postExcludedFields);
-	const posts = await Post.aggregate()
-		.search({
-			text: {
-				query: searchText,
-				path: ["title", "body"],
-			},
-		})
-		.match({ isPublic: true })
-		.project(postSearchExcludedFields);
+	const posts = await Post.find({
+		$and: [{ $text: { $search: searchText } }, { isPublic: true }],
+	}).select(postSearchExcludedFields);
 
 	return res
 		.status(200)
@@ -214,12 +207,12 @@ const getPostSummary = asyncReqHandler(async (req, res) => {
 	const slug = req.params?.slug;
 	if (!slug) throw new ApiError("400", "slug is required");
 
-	const post = await Post.findOne({ slug });
+	const post = await Post.findOne({ slug, isPublic: true });
 	if (!post) throw new ApiError("404", "Post not found");
 
-	if (!post.isPublic) throw new ApiError("403", "Unauthorized Access");
+	const strippedBody = await markdownService.convert(post.body);
 
-	const summary = await summaryService.getSummary(post.body);
+	const summary = await summaryService.getSummary(strippedBody);
 	if (!summary)
 		throw new ApiError("500", "Something went wrong : Summary Service");
 
@@ -227,6 +220,7 @@ const getPostSummary = asyncReqHandler(async (req, res) => {
 		.status(200)
 		.json(new ApiResponse("Sucessfully summarized the post", { summary }, 200));
 });
+
 // TODO: Complete it
 const suggestPostsSemantic = asyncReqHandler(async () => {
 	const searchText = req.query?.search;

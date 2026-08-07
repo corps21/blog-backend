@@ -1,4 +1,3 @@
-import { hash } from "bcrypt";
 import { AnonUser, User } from "../models/index.js";
 import {
 	ApiError,
@@ -37,7 +36,7 @@ async function _generateAccessAndRefreshToken(user) {
 	if (!accessToken || !refreshToken)
 		throw new ApiError(500, "Error while creating tokens");
 
-	user.refreshToken = refreshToken
+	user.refreshToken = refreshToken;
 
 	await user.save({ validateBeforeSave: false });
 
@@ -108,7 +107,7 @@ const loginUser = asyncReqHandler(async (req, res) => {
 
 	if (!isPasswordCorrect) throw new ApiError(400, "Password is incorrect");
 
-	const { accessToken, refreshToken } = await _generateAccessAndRefreshToken(user);
+	const { accessToken, refreshToken } =
 		await _generateAccessAndRefreshToken(user);
 
 	const options = {
@@ -116,7 +115,11 @@ const loginUser = asyncReqHandler(async (req, res) => {
 		secure: true,
 	};
 
-	const { password: _password, refreshToken: _refreshToken, ...safeUser } = user.toObject();
+	const {
+		password: _password,
+		refreshToken: _refreshToken,
+		...safeUser
+	} = user.toObject();
 
 	res
 		.status(200)
@@ -124,7 +127,11 @@ const loginUser = asyncReqHandler(async (req, res) => {
 		.json(
 			new ApiResponse(
 				"Successfully logged in",
-				{ user: safeUser, accessToken: accessToken, refreshToken: refreshToken },
+				{
+					user: safeUser,
+					accessToken: accessToken,
+					refreshToken: refreshToken,
+				},
 				200,
 			),
 		);
@@ -153,23 +160,25 @@ const logoutUser = asyncReqHandler(async (req, res) => {
 });
 
 const refreshAccessToken = asyncReqHandler(async (req, res) => {
-
 	// Check against action after deletion of user
-	const token = req.cookies.refreshToken ?? req.body.refreshToken
+	const token = req.cookies.refreshToken ?? req.body.refreshToken;
 	if (!token) throw new ApiError(401, "Need refresh token");
 
-	const decodedUser = await promisedJWTVerify(token, process.env.REFRESH_TOKEN_SECRET);
+	const decodedUser = await promisedJWTVerify(
+		token,
+		process.env.REFRESH_TOKEN_SECRET,
+	);
 	if (!decodedUser) throw new ApiError(401, "Invalid token");
 
-	const user = decodedUser.kind === "User"
+	const user =
+		decodedUser.kind === "User"
 			? await User.findById(decodedUser._id).select("+refreshToken")
 			: await AnonUser.findById(decodedUser._id).select("+refreshToken");
 	if (!user) throw new ApiError(404, "User not found");
 
 	const isRefreshTokenValid = await user.compareRefreshToken(token);
 
-	if (!isRefreshTokenValid)
-		throw new ApiError(401, "Invalid refresh token");
+	if (!isRefreshTokenValid) throw new ApiError(401, "Invalid refresh token");
 
 	const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
 		await _generateAccessAndRefreshToken(user);
@@ -214,7 +223,7 @@ const changeUserPassword = asyncReqHandler(async (req, res) => {
 	const { oldPassword, newPassword } = req.body;
 	const user = await User.findById(req.user._id).select("+password");
 
-	console.log(oldPassword, newPassword)
+	console.log(oldPassword, newPassword);
 
 	if (!oldPassword || !newPassword)
 		throw new ApiError(400, "All fields are required");

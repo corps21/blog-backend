@@ -47,6 +47,12 @@ const postSchema = new Schema(
 	},
 );
 
+postSchema.index({ isPublic: 1, createdAt: -1 });
+postSchema.index(
+	{ title: "text", body: "text" },
+	{ weights: { title: 10, body: 1 } },
+);
+
 const Post = model("post", postSchema);
 
 export { Post };

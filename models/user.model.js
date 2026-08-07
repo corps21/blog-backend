@@ -31,11 +31,17 @@ baseUserSchema.pre(
 	"save",
 	tryCatchWrapper(async function () {
 		if (this.isModified("password")) {
-			this.password = await hash(this.password, Number(process.env.SALT_ROUNDS));
+			this.password = await hash(
+				this.password,
+				Number(process.env.SALT_ROUNDS),
+			);
 		}
 
 		if (this.isModified("refreshToken") && this.refreshToken) {
-			this.refreshToken = await hash(this.refreshToken, Number(process.env.SALT_ROUNDS));
+			this.refreshToken = await hash(
+				this.refreshToken,
+				Number(process.env.SALT_ROUNDS),
+			);
 		}
 	}),
 );

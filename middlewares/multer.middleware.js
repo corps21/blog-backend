@@ -22,6 +22,6 @@ const fileFilter = (_req, file, cb) => {
 	} else cb(null, true);
 };
 
-const upload = multer({ storage, limits});
+const upload = multer({ storage, limits });
 
 export { upload };
