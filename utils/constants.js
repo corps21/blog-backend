@@ -1,7 +1,9 @@
-export const postSearchExcludedFields = {
-	isPublic: 0,
-	createdAt: 0,
-	updatedAt: 0,
-	embedding: 0,
-	__v: 0,
+export const postSearchFields = {
+	_id: 1,
+	title: 1,
+	slug: 1,
+	body: 1,
+	author: 1,
+	createdAt: 1,
+	updatedAt: 1,
 };

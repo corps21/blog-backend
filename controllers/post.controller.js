@@ -3,7 +3,7 @@ import { Post } from "../models/index.js";
 import { embeddingService } from "../services/embedding.service.js";
 import { summaryService } from "../services/summary.service.js";
 import { markdownService } from "../services/markdown.service.js";
-import { postSearchExcludedFields } from "../utils/constants.js";
+import { postSearchFields } from "../utils/constants.js";
 import {
 	ApiError,
 	ApiResponse,
@@ -191,18 +191,38 @@ const getAllPosts = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Successfully fetched all posts", { posts }, 200));
 });
 
+// TODO: Hybrid Search
 const searchPosts = asyncReqHandler(async (req, res) => {
 	const searchText = req.query?.search;
 	if (!searchText) throw new ApiError(400, "search is required");
-	const posts = await Post.find({
-		$and: [{ $text: { $search: searchText } }, { isPublic: true }],
-	}).select(postSearchExcludedFields);
+
+	const posts = await Post.aggregate()
+		.search({
+			index: "post_search_index",
+			text: {
+				query: searchText,
+				path: ["title", "body"],
+				fuzzy: {
+					maxEdits: 2,
+					prefixLength: 1,
+				},
+			},
+		})
+		.match({
+			isPublic: true,
+		})
+		.project({
+			...postSearchFields,
+			score: { $meta: "searchScore" },
+		})
+		.limit(10);
 
 	return res
 		.status(200)
 		.json(new ApiResponse("Succesfully fetched search result", { posts }, 200));
 });
 
+// TODO: Try gemini summary service
 const getPostSummary = asyncReqHandler(async (req, res) => {
 	const slug = req.params?.slug;
 	if (!slug) throw new ApiError("400", "slug is required");
@@ -221,23 +241,48 @@ const getPostSummary = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Sucessfully summarized the post", { summary }, 200));
 });
 
-// TODO: Complete it
-const suggestPostsSemantic = asyncReqHandler(async () => {
+const suggestPostsSemantic = asyncReqHandler(async (req, res) => {
 	const searchText = req.query?.search;
 	if (!searchText) throw new ApiError(400, "search is required");
-	const textEmbedding = await embeddingService.getEmbedding(searchPosts);
+
+	const textEmbedding = await embeddingService.getEmbedding(searchText);
 	if (!textEmbedding)
-		throw new ApiError("500", "Something went wrong : Summary Service");
+		throw new ApiError("500", "Something went wrong : Embedding Service");
+
+	const posts = await Post.aggregate([
+		{
+			$vectorSearch: {
+				index: "post_vector_search_index",
+				path: "embedding",
+				queryVector: textEmbedding,
+				numCandidates: 200,
+				limit: 50,
+				filter: {
+					isPublic: true,
+				},
+			},
+		},
+		{
+			$addFields: {
+				score: { $meta: "vectorSearchScore" },
+			},
+		},
+		{
+			$match: {
+				score: { $gte: 0.35 },
+			},
+		},
+		{
+			$project: {
+				...postSearchFields,
+				score: 1,
+			},
+		},
+	]);
 
 	return res
 		.status(200)
-		.json(
-			new ApiResponse(
-				"Sucessfully summarized the post",
-				{ textEmbedding },
-				200,
-			),
-		);
+		.json(new ApiResponse("Sucessfully summarized the post", { posts }, 200));
 });
 
 export {

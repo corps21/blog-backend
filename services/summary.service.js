@@ -10,9 +10,10 @@ class SummaryService {
 		);
 
 		const summaryData = await summarizer(text, {
-			max_new_tokens: 250,
+			max_length: 500,
 			min_new_tokens: 150,
 		});
+
 		return summaryData;
 	});
 }

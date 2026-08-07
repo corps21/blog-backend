@@ -23,22 +23,18 @@ app.use(express.json({ limit: "16Kb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// routes
 app.use("/api/v1/health", healthRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/post", postRouter);
 
-// error handler and not found middleware
 app.use(notFound);
 app.use(errorHandler);
 
-// connecting database
+const PORT = process.env.PORT ?? 8000;
 connection()
 	.then(() => {
-		app.listen(process.env.PORT || 8000, () => {
-			console.log(
-				`Server starting at http://localhost:${process.env.PORT || 8000}`,
-			);
+		app.listen(PORT, () => {
+			console.log(`Server starting at http://localhost:${PORT}`);
 		});
 	})
 	.catch((err) =>
