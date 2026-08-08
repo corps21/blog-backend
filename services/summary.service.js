@@ -60,7 +60,7 @@ class SummaryService {
 			body,
 		});
 
-		const summaryData = (await summaryResponse.json());
+		const summaryData = await summaryResponse.json();
 		return summaryData.candidates[0].content.parts[0].text;
 	});
 }

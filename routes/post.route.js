@@ -7,6 +7,7 @@ import {
 	getPublicPostBySlug,
 	searchPosts,
 	updateCoverImage,
+	getPostRecommendations,
 	updatePost,
 } from "../controllers/post.controller.js";
 import { denyAnonymous, upload, verifyJWT } from "../middlewares/index.js";
@@ -35,4 +36,5 @@ router
 	); // DONE ✅
 
 router.get("/:slug/summary", verifyJWT, getPostSummary);
+router.get("/:slug/recommendations", verifyJWT, getPostRecommendations);
 export default router;

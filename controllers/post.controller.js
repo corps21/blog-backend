@@ -12,8 +12,7 @@ import {
 	uploadHandler,
 } from "../utils/index.js";
 
-// TODO: Upgrade to mongodb autoembedding
-// TODO: Add cache for summary
+// TODO: Add cache for summary and recommendations
 // TODO: Add rate limiter for post
 const createPost = asyncReqHandler(async (req, res) => {
 	const user = req.user;
@@ -252,6 +251,10 @@ const searchPosts = asyncReqHandler(async (req, res) => {
 		},
 
 		{
+			$limit: 10,
+		},
+
+		{
 			$project: postSearchFields,
 		},
 	]);
@@ -280,6 +283,53 @@ const getPostSummary = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Sucessfully summarized the post", { summary }, 200));
 });
 
+const getPostRecommendations = asyncReqHandler(async (req, res) => {
+	const user = req.user;
+	if (!user) throw new ApiError(401, "Unauthorized request");
+	const post = await Post.findOne({
+		isPublic: true,
+		slug: req.params?.slug,
+	}).select("+embedding");
+	if (!post) throw new ApiError(404, "Post not found");
+
+	const embedding = post.embedding;
+
+	const recommendations = await Post.aggregate([
+		{
+			$vectorSearch: {
+				index: "post_vector_search_index",
+				path: "embedding",
+				queryVector: embedding,
+				numCandidates: 10,
+				limit: 4,
+				filter: {
+					isPublic: true,
+				},
+			},
+		},
+		{
+			$match: {
+				_id: {
+					$ne: post._id,
+				},
+			},
+		},
+		{
+			$project: postSearchFields,
+		},
+	]);
+
+	return res
+		.status(200)
+		.json(
+			new ApiResponse(
+				"Successfully fetched all posts",
+				{ recommendations },
+				200,
+			),
+		);
+});
+
 export {
 	createPost,
 	updatePost,
@@ -291,4 +341,5 @@ export {
 	getPublicPostBySlug,
 	getPostSummary,
 	deletePost,
+	getPostRecommendations,
 };

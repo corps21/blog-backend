@@ -40,8 +40,8 @@ router
 		asyncReqHandler(upload.single("avatar")),
 		updateAvatar,
 	) // DONE ✅
-	// TODO: need access control for these routes
-	.get("/:id", getUser) // DONE ✅
+
+	.get("/:id", verifyJWT, getUser) // DONE ✅
 	.get("/:id/posts", verifyJWT, getPublicPosts); // DONE ✅
 
 export default router;
