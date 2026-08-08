@@ -21,7 +21,7 @@ router.get("/public", getAllPublicPosts); // DONE ✅
 router
 	.route("/")
 	.post(verifyJWT, denyAnonymous, createPost) // DONE ✅
-	.get(verifyJWT, searchPosts) // DONE ✅
+	.get(verifyJWT, searchPosts); // DONE ✅
 
 router
 	.route("/:slug")

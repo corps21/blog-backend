@@ -12,6 +12,9 @@ import {
 	uploadHandler,
 } from "../utils/index.js";
 
+// TODO: Upgrade to mongodb autoembedding
+// TODO: Add cache for summary
+// TODO: Add rate limiter for post
 const createPost = asyncReqHandler(async (req, res) => {
 	const user = req.user;
 	const { title, slug, body, isPublic } = req.body;
@@ -24,7 +27,7 @@ const createPost = asyncReqHandler(async (req, res) => {
 	const embedding = await embeddingService.getEmbedding(strippedBody);
 
 	if (!embedding.length)
-		throw new ApiError("500", "Error while creating embeddings for post");
+		throw new ApiError(500, "Error while creating embeddings for post");
 
 	const createdPost = await Post.create({
 		title,
@@ -197,7 +200,7 @@ const searchPosts = asyncReqHandler(async (req, res) => {
 
 	const searchTextEmbedding = await embeddingService.getEmbedding(searchText);
 	if (!searchTextEmbedding)
-		throw new ApiError("500", "Something went wrong : Embedding Service");
+		throw new ApiError(500, "Something went wrong : Embedding Service");
 
 	const posts = await Post.aggregate([
 		{
@@ -214,9 +217,9 @@ const searchPosts = asyncReqHandler(async (req, res) => {
 										fuzzy: {
 											maxEdits: 2,
 											prefixLength: 1,
-										}
-									}
-								}
+										},
+									},
+								},
 							},
 							{ $limit: 20 },
 						],
@@ -227,9 +230,9 @@ const searchPosts = asyncReqHandler(async (req, res) => {
 									path: "embedding",
 									queryVector: searchTextEmbedding,
 									numCandidates: 200,
-									limit: 20
+									limit: 20,
 								},
-							}
+							},
 						],
 					},
 				},
@@ -258,19 +261,19 @@ const searchPosts = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Succesfully fetched search result", { posts }, 200));
 });
 
-// TODO: Try gemini summary service
 const getPostSummary = asyncReqHandler(async (req, res) => {
 	const slug = req.params?.slug;
-	if (!slug) throw new ApiError("400", "slug is required");
+	if (!slug) throw new ApiError(400, "slug is required");
 
 	const post = await Post.findOne({ slug, isPublic: true });
-	if (!post) throw new ApiError("404", "Post not found");
+	if (!post) throw new ApiError(404, "Post not found");
 
 	const strippedBody = await markdownService.convert(post.body);
 
 	const summary = await summaryService.getSummary(strippedBody);
+	console.log(summary);
 	if (!summary)
-		throw new ApiError("500", "Something went wrong : Summary Service");
+		throw new ApiError(500, "Something went wrong : Summary Service");
 
 	return res
 		.status(200)
@@ -287,5 +290,5 @@ export {
 	searchPosts,
 	getPublicPostBySlug,
 	getPostSummary,
-	deletePost
+	deletePost,
 };
