@@ -3,11 +3,11 @@ import {
 	createPost,
 	deletePost,
 	getAllPublicPosts,
+	getPostRecommendations,
 	getPostSummary,
 	getPublicPostBySlug,
 	searchPosts,
 	updateCoverImage,
-	getPostRecommendations,
 	updatePost,
 } from "../controllers/post.controller.js";
 import { denyAnonymous, upload, verifyJWT } from "../middlewares/index.js";

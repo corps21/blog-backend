@@ -1,44 +1,34 @@
-import cookieParser from "cookie-parser";
-// import cors from "cors";
-import { configDotenv } from "dotenv";
-import express from "express";
-import connectDb from "./connectDb.js";
-import { errorHandler, notFound } from "./middlewares/index.js";
-import { healthRouter, postRouter, userRouter } from "./routes/index.js";
+import { createServer } from "node:http";
+import { config as configDotenv } from "dotenv";
+import { createApp } from "./app/app.js";
+import { connectDb } from "./db/connectDb.js";
+import { redisClient } from "./redis/createRedisClient.js";
 
-const app = express();
 configDotenv({
 	path: "./.env",
 });
-const connection = connectDb(process.env.MONGODB_URI, process.env.MONGODB_PASS);
 
-// global middleware
-// app.use(
-// 	cors({
-// 		origin: "http://localhost:5173",
-// 		credentials: true,
-// 	}),
-// );
-app.use(express.json({ limit: "16Kb" }));
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+async function main() {
+	try {
+		const PORT = process.env.PORT ?? 8000;
 
-app.use("/api/v1/health", healthRouter);
-app.use("/api/v1/user", userRouter);
-app.use("/api/v1/post", postRouter);
+		const app = createApp();
+		const server = createServer(app);
+		const connection = connectDb(
+			process.env.MONGODB_URI,
+			process.env.MONGODB_PASS,
+		);
 
-app.use(notFound);
-app.use(errorHandler);
+		await connection();
+		await redisClient.connect();
 
-const PORT = process.env.PORT ?? 8000;
-connection()
-	.then(() => {
-		app.listen(PORT, () => {
-			console.log(`Server starting at http://localhost:${PORT}`);
+		server.listen(PORT, () => {
+			console.log(`Server started at http://localhost:${PORT}`);
 		});
-	})
-	.catch((err) =>
-		console.log("Error while making connection to database ", err),
-	);
+	} catch (err) {
+		console.log(err);
+		process.exit(1);
+	}
+}
 
-export default app;
+main();

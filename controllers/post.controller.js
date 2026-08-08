@@ -1,8 +1,9 @@
 import DOMPurify from "isomorphic-dompurify";
 import { Post } from "../models/index.js";
+import { redisClient } from "../redis/createRedisClient.js";
 import { embeddingService } from "../services/embedding.service.js";
-import { summaryService } from "../services/summary.service.js";
 import { markdownService } from "../services/markdown.service.js";
+import { summaryService } from "../services/summary.service.js";
 import { postSearchFields } from "../utils/constants.js";
 import {
 	ApiError,
@@ -12,7 +13,6 @@ import {
 	uploadHandler,
 } from "../utils/index.js";
 
-// TODO: Add cache for summary and recommendations
 // TODO: Add rate limiter for post
 const createPost = asyncReqHandler(async (req, res) => {
 	const user = req.user;
@@ -268,19 +268,37 @@ const getPostSummary = asyncReqHandler(async (req, res) => {
 	const slug = req.params?.slug;
 	if (!slug) throw new ApiError(400, "slug is required");
 
-	const post = await Post.findOne({ slug, isPublic: true });
-	if (!post) throw new ApiError(404, "Post not found");
+	const summaryRedisKey = `summary:${slug}`;
+	const cachedSummary = await redisClient.get(summaryRedisKey);
 
-	const strippedBody = await markdownService.convert(post.body);
+	if (cachedSummary) {
+		return res
+			.status(200)
+			.json(
+				new ApiResponse(
+					"Successfully fetched summary",
+					{ summary: cachedSummary },
+					200,
+				),
+			);
+	} else {
+		const post = await Post.findOne({ slug, isPublic: true });
+		if (!post) throw new ApiError(404, "Post not found");
 
-	const summary = await summaryService.getSummary(strippedBody);
-	console.log(summary);
-	if (!summary)
-		throw new ApiError(500, "Something went wrong : Summary Service");
+		const strippedBody = await markdownService.convert(post.body);
 
-	return res
-		.status(200)
-		.json(new ApiResponse("Sucessfully summarized the post", { summary }, 200));
+		const summary = await summaryService.getSummary(strippedBody);
+
+		if (!summary)
+			throw new ApiError(500, "Something went wrong : Summary Service");
+
+		await redisClient.set(summaryRedisKey, summary, { EX: 60 * 60 * 24 });
+		return res
+			.status(200)
+			.json(
+				new ApiResponse("Sucessfully summarized the post", { summary }, 200),
+			);
+	}
 });
 
 const getPostRecommendations = asyncReqHandler(async (req, res) => {
@@ -292,42 +310,62 @@ const getPostRecommendations = asyncReqHandler(async (req, res) => {
 	}).select("+embedding");
 	if (!post) throw new ApiError(404, "Post not found");
 
-	const embedding = post.embedding;
+	const recommendationsRedisKey = `recommendations:${post.slug}`;
+	const cachedRecommendations = await redisClient.get(recommendationsRedisKey);
 
-	const recommendations = await Post.aggregate([
-		{
-			$vectorSearch: {
-				index: "post_vector_search_index",
-				path: "embedding",
-				queryVector: embedding,
-				numCandidates: 10,
-				limit: 4,
-				filter: {
-					isPublic: true,
+	if (cachedRecommendations) {
+		const parsedRecommendations = JSON.parse(cachedRecommendations);
+		return res
+			.status(200)
+			.json(
+				new ApiResponse(
+					"Successfully fetched recommendations",
+					{ recommendations: parsedRecommendations },
+					200,
+				),
+			);
+	} else {
+		const embedding = post.embedding;
+		const recommendations = await Post.aggregate([
+			{
+				$vectorSearch: {
+					index: "post_vector_search_index",
+					path: "embedding",
+					queryVector: embedding,
+					numCandidates: 10,
+					limit: 4,
+					filter: {
+						isPublic: true,
+					},
 				},
 			},
-		},
-		{
-			$match: {
-				_id: {
-					$ne: post._id,
+			{
+				$match: {
+					_id: {
+						$ne: post._id,
+					},
 				},
 			},
-		},
-		{
-			$project: postSearchFields,
-		},
-	]);
+			{
+				$project: postSearchFields,
+			},
+		]);
 
-	return res
-		.status(200)
-		.json(
-			new ApiResponse(
-				"Successfully fetched all posts",
-				{ recommendations },
-				200,
-			),
-		);
+		const stringifiedRecommendations = JSON.stringify(recommendations);
+		await redisClient.set(recommendationsRedisKey, stringifiedRecommendations, {
+			EX: 60 * 60 * 24,
+		});
+
+		return res
+			.status(200)
+			.json(
+				new ApiResponse(
+					"Successfully fetched all posts",
+					{ recommendations },
+					200,
+				),
+			);
+	}
 });
 
 export {
