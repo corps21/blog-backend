@@ -1,4 +1,4 @@
-export const postSearchFields = {
+export const postReccomendationFields = {
 	_id: 1,
 	title: 1,
 	slug: 1,
@@ -6,4 +6,18 @@ export const postSearchFields = {
 	author: 1,
 	createdAt: 1,
 	updatedAt: 1,
+};
+
+export const postSearchFields = {
+	_id:1,
+	title: 1,
+	slug: 1,
+	author: 1,
+	createdAt: 1,
+	updatedAt: 1,
+}
+
+export const postAutocompleteFields = {
+	_id: 0,
+	title: 1,
 };

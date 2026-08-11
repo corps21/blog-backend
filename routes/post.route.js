@@ -9,6 +9,7 @@ import {
 	searchPosts,
 	updateCoverImage,
 	updatePost,
+	getSearchSuggestions,
 } from "../controllers/post.controller.js";
 import { denyAnonymous, upload, verifyJWT } from "../middlewares/index.js";
 import { asyncReqHandler } from "../utils/index.js";
@@ -24,6 +25,8 @@ router
 	.post(verifyJWT, denyAnonymous, createPost) // DONE ✅
 	.get(verifyJWT, searchPosts); // DONE ✅
 
+router.get("/search-suggestions", verifyJWT, getSearchSuggestions);
+	
 router
 	.route("/:slug")
 	.get(getPublicPostBySlug) // DONE ✅

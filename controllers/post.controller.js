@@ -4,7 +4,7 @@ import { redisClient } from "../redis/createRedisClient.js";
 import { embeddingService } from "../services/embedding.service.js";
 import { markdownService } from "../services/markdown.service.js";
 import { summaryService } from "../services/summary.service.js";
-import { postSearchFields } from "../utils/constants.js";
+import { postSearchFields, postAutocompleteFields, postReccomendationFields } from "../utils/constants.js";
 import {
 	ApiError,
 	ApiResponse,
@@ -264,6 +264,29 @@ const searchPosts = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Succesfully fetched search result", { posts }, 200));
 });
 
+const getSearchSuggestions = asyncReqHandler(async (req, res) => {
+	const searchText = req.query?.search;
+	if (!searchText) throw new ApiError(400, "search is required");
+
+	const suggestions = (await Post.aggregate([
+		{
+			$search: {
+				index: "post_autocomplete_index",
+				autocomplete: {
+					query: searchText,
+					path: "title"
+				}
+			}
+		},
+		{ $limit: 10 },
+		{
+			$project: postAutocompleteFields
+		}
+	])).map((post) => post.title);
+
+	return res.status(200).json(new ApiResponse("Successfully fetched suggestions", { suggestions }, 200));
+})
+
 const getPostSummary = asyncReqHandler(async (req, res) => {
 	const slug = req.params?.slug;
 	if (!slug) throw new ApiError(400, "slug is required");
@@ -347,7 +370,7 @@ const getPostRecommendations = asyncReqHandler(async (req, res) => {
 				},
 			},
 			{
-				$project: postSearchFields,
+				$project: postReccomendationFields,
 			},
 		]);
 
@@ -380,4 +403,5 @@ export {
 	getPostSummary,
 	deletePost,
 	getPostRecommendations,
+	getSearchSuggestions
 };
