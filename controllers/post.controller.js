@@ -179,6 +179,25 @@ const getPublicPostBySlug = asyncReqHandler(async (req, res) => {
 		.json(new ApiResponse("Succesfully fetched the post", { post }, 200));
 });
 
+const getPrivatePostBySlug = asyncReqHandler(async (req, res) => {
+	const user = req?.user;
+	if (!user) throw new ApiError(401, "Unauthorized request");
+
+	const slug = req.params?.slug;
+	if (!slug) throw new ApiError(400, "slug is required");
+
+	const post = await Post.findOne({
+		slug,
+		isPublic: false,
+		author: user?._id,
+	}).select(postSearchFields);
+
+	if (!post) throw new ApiError(404, "Post not found");
+	return res
+		.status(200)
+		.json(new ApiResponse("Succesfully fetched the post", { post }, 200));
+});
+
 // all public posts
 const getAllPublicPosts = asyncReqHandler(async (_req, res) => {
 	const PostAggregate = Post.aggregate().match({ isPublic: true });
@@ -309,6 +328,11 @@ const getSearchSuggestions = asyncReqHandler(async (req, res) => {
 					},
 				},
 			},
+			{
+				$match: {
+					isPublic: true,
+				},
+			},
 			{ $limit: 10 },
 			{
 				$project: postAutocompleteFields,
@@ -394,9 +418,9 @@ const getPostRecommendations = asyncReqHandler(async (req, res) => {
 					queryVector: embedding,
 					numCandidates: 10,
 					limit: 5,
-					filter: {
-						isPublic: true,
-					},
+					// filter: {
+					// 	isPublic: true,
+					// },
 				},
 			},
 			{
@@ -404,6 +428,7 @@ const getPostRecommendations = asyncReqHandler(async (req, res) => {
 					_id: {
 						$ne: post._id,
 					},
+					isPublic: true,
 				},
 			},
 		]);
@@ -439,4 +464,5 @@ export {
 	deletePost,
 	getPostRecommendations,
 	getSearchSuggestions,
+	getPrivatePostBySlug,
 };

@@ -9,6 +9,7 @@ export const postRecommendationFields = {
 		avatarUrl: 1,
 		userName: 1,
 	},
+	isPublic: 1,
 	createdAt: 1,
 	updatedAt: 1,
 };
@@ -19,6 +20,7 @@ export const postSearchFields = {
 	slug: 1,
 	body: 1,
 	author: 1,
+	isPublic: 1,
 	coverImageUrl: 1,
 	createdAt: 1,
 	updatedAt: 1,

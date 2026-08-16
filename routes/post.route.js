@@ -10,6 +10,7 @@ import {
 	updateCoverImage,
 	updatePost,
 	getSearchSuggestions,
+	getPrivatePostBySlug,
 } from "../controllers/post.controller.js";
 import { denyAnonymous, upload, verifyJWT } from "../middlewares/index.js";
 import { asyncReqHandler } from "../utils/index.js";
@@ -40,4 +41,6 @@ router
 
 router.get("/:slug/summary", verifyJWT, getPostSummary);
 router.get("/:slug/recommendations", verifyJWT, getPostRecommendations);
+router.get("/:slug/private", verifyJWT, getPrivatePostBySlug);
+
 export default router;
