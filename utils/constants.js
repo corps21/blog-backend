@@ -7,7 +7,8 @@ export const postReccomendationFields = {
 	author: {
 		_id: 1,
 		fullName: 1,
-		avatarUrl: 1
+		avatarUrl:1,
+		userName:1,
 	},
 	createdAt: 1,
 	updatedAt: 1,

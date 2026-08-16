@@ -376,7 +376,7 @@ const getPostRecommendations = asyncReqHandler(async (req, res) => {
 					path: "embedding",
 					queryVector: embedding,
 					numCandidates: 10,
-					limit: 4,
+					limit: 5,
 					filter: {
 						isPublic: true,
 					},
