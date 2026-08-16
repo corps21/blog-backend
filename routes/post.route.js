@@ -26,7 +26,7 @@ router
 	.get(verifyJWT, searchPosts); // DONE ✅
 
 router.get("/search-suggestions", verifyJWT, getSearchSuggestions);
-	
+
 router
 	.route("/:slug")
 	.get(getPublicPostBySlug) // DONE ✅

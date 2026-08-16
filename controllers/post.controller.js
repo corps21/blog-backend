@@ -4,7 +4,11 @@ import { redisClient } from "../redis/createRedisClient.js";
 import { embeddingService } from "../services/embedding.service.js";
 import { markdownService } from "../services/markdown.service.js";
 import { summaryService } from "../services/summary.service.js";
-import { postSearchFields, postAutocompleteFields, postRecommendationFields } from "../utils/constants.js";
+import {
+	postSearchFields,
+	postAutocompleteFields,
+	postRecommendationFields,
+} from "../utils/constants.js";
 
 import {
 	ApiError,
@@ -14,14 +18,16 @@ import {
 	uploadHandler,
 } from "../utils/index.js";
 
-
 function generatePostWithAuthor(aggregate) {
-	return aggregate.lookup({
-		from: "users",
-		localField: "author",
-		foreignField: "_id",
-		as: "author",
-	}).unwind("author").project(postRecommendationFields);
+	return aggregate
+		.lookup({
+			from: "users",
+			localField: "author",
+			foreignField: "_id",
+			as: "author",
+		})
+		.unwind("author")
+		.project(postRecommendationFields);
 }
 
 // TODO: Add rate limiter for post
@@ -162,8 +168,10 @@ const updateCoverImage = asyncReqHandler(async (req, res) => {
 const getPublicPostBySlug = asyncReqHandler(async (req, res) => {
 	const slug = req.params?.slug;
 	if (!slug) throw new ApiError(400, "slug is required");
-	
-	const post = await Post.findOne({slug, isPublic: true}).select(postSearchFields);
+
+	const post = await Post.findOne({ slug, isPublic: true }).select(
+		postSearchFields,
+	);
 
 	if (!post) throw new ApiError(404, "Post not found");
 	return res
@@ -176,7 +184,7 @@ const getAllPublicPosts = asyncReqHandler(async (_req, res) => {
 	const PostAggregate = Post.aggregate().match({ isPublic: true });
 	const PostAggregateWithAuthor = generatePostWithAuthor(PostAggregate);
 	const posts = await PostAggregateWithAuthor;
-	
+
 	return res
 		.status(200)
 		.json(
@@ -189,7 +197,10 @@ const getPublicPosts = asyncReqHandler(async (req, res) => {
 	const userId = req.params?.id;
 	if (!userId) throw new ApiError(400, "UserId is required");
 
-	const PostAggregate = Post.aggregate().match({ isPublic: true, author: userId });
+	const PostAggregate = Post.aggregate().match({
+		isPublic: true,
+		author: userId,
+	});
 	const PostAggregateWithAuthor = generatePostWithAuthor(PostAggregate);
 	const posts = await PostAggregateWithAuthor;
 
@@ -273,7 +284,7 @@ const searchPosts = asyncReqHandler(async (req, res) => {
 
 		{
 			$limit: 10,
-		}
+		},
 	]);
 	const PostAggregateWithAuthor = generatePostWithAuthor(PostAggregate);
 	const posts = await PostAggregateWithAuthor;
@@ -287,24 +298,30 @@ const getSearchSuggestions = asyncReqHandler(async (req, res) => {
 	const searchText = req.query?.search;
 	if (!searchText) throw new ApiError(400, "search is required");
 
-	const suggestions = (await Post.aggregate([
-		{
-			$search: {
-				index: "post_autocomplete_index",
-				autocomplete: {
-					query: searchText,
-					path: "title"
-				}
-			}
-		},
-		{ $limit: 10 },
-		{
-			$project: postAutocompleteFields
-		}
-	])).map((post) => post.title);
+	const suggestions = (
+		await Post.aggregate([
+			{
+				$search: {
+					index: "post_autocomplete_index",
+					autocomplete: {
+						query: searchText,
+						path: "title",
+					},
+				},
+			},
+			{ $limit: 10 },
+			{
+				$project: postAutocompleteFields,
+			},
+		])
+	).map((post) => post.title);
 
-	return res.status(200).json(new ApiResponse("Successfully fetched suggestions", { suggestions }, 200));
-})
+	return res
+		.status(200)
+		.json(
+			new ApiResponse("Successfully fetched suggestions", { suggestions }, 200),
+		);
+});
 
 const getPostSummary = asyncReqHandler(async (req, res) => {
 	const slug = req.params?.slug;
@@ -388,8 +405,7 @@ const getPostRecommendations = asyncReqHandler(async (req, res) => {
 						$ne: post._id,
 					},
 				},
-
-			}
+			},
 		]);
 		const PostAggregateWithAuthor = generatePostWithAuthor(PostAggregate);
 		const recommendations = await PostAggregateWithAuthor;
@@ -422,5 +438,5 @@ export {
 	getPostSummary,
 	deletePost,
 	getPostRecommendations,
-	getSearchSuggestions
+	getSearchSuggestions,
 };

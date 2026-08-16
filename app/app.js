@@ -1,5 +1,5 @@
 import cookieParser from "cookie-parser";
-// import cors from "cors";
+import cors from "cors";
 import express from "express";
 import { errorHandler, notFound } from "../middlewares/index.js";
 import { healthRouter, postRouter, userRouter } from "../routes/index.js";
@@ -7,13 +7,12 @@ import { healthRouter, postRouter, userRouter } from "../routes/index.js";
 export function createApp() {
 	const app = express();
 
-	// global middleware
-	// app.use(
-	// 	cors({
-	// 		origin: "http://localhost:5173",
-	// 		credentials: true,
-	// 	}),
-	// );
+	app.use(
+		cors({
+			origin: process.env.CORS,
+			credentials: true,
+		}),
+	);
 
 	app.use(express.json({ limit: "16Kb" }));
 	app.use(express.urlencoded({ extended: true }));
