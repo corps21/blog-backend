@@ -4,7 +4,9 @@ import { redisClient } from "../redis/createRedisClient.js";
 import { embeddingService } from "../services/embedding.service.js";
 import { markdownService } from "../services/markdown.service.js";
 import { summaryService } from "../services/summary.service.js";
-import { postSearchFields, postAutocompleteFields, postReccomendationFields } from "../utils/constants.js";
+
+import { postSearchFields, postAutocompleteFields} from "../utils/constants.js";
+
 import {
 	ApiError,
 	ApiResponse,
@@ -12,6 +14,16 @@ import {
 	deleteHandler,
 	uploadHandler,
 } from "../utils/index.js";
+
+
+function generatePostWithAuthor(aggregate) {
+	return aggregate.lookup({
+		from: "users",
+		localField: "author",
+		foreignField: "_id",
+		as: "author",
+	}).unwind("author").project(postSearchFields);
+}
 
 // TODO: Add rate limiter for post
 const createPost = asyncReqHandler(async (req, res) => {
@@ -151,9 +163,13 @@ const updateCoverImage = asyncReqHandler(async (req, res) => {
 const getPublicPostBySlug = asyncReqHandler(async (req, res) => {
 	const slug = req.params?.slug;
 	if (!slug) throw new ApiError(400, "slug is required");
-	const post = await Post.findOne({ slug });
-	if (!post) throw new ApiError(404, "Post not found");
 
+	const PostAggregate = Post.aggregate().match({ isPublic: true, slug })
+	const PostAggregateWithAuthor = generatePostWithAuthor(PostAggregate);
+	
+	const post = (await PostAggregateWithAuthor).post;
+	console.log(post)
+	if (!post) throw new ApiError(404, "Post not found");
 	return res
 		.status(200)
 		.json(new ApiResponse("Succesfully fetched the post", { post }, 200));
@@ -161,7 +177,10 @@ const getPublicPostBySlug = asyncReqHandler(async (req, res) => {
 
 // all public posts
 const getAllPublicPosts = asyncReqHandler(async (_req, res) => {
-	const posts = await Post.find({ isPublic: true });
+	const PostAggregate = Post.aggregate().match({ isPublic: true });
+	const PostAggregateWithAuthor = generatePostWithAuthor(PostAggregate);
+	const posts = await PostAggregateWithAuthor;
+	
 	return res
 		.status(200)
 		.json(
@@ -173,9 +192,11 @@ const getAllPublicPosts = asyncReqHandler(async (_req, res) => {
 const getPublicPosts = asyncReqHandler(async (req, res) => {
 	const userId = req.params?.id;
 	if (!userId) throw new ApiError(400, "UserId is required");
-	const posts = await Post.find({
-		$and: [{ isPublic: true }, { author: userId }],
-	});
+
+	const PostAggregate = Post.aggregate().match({ isPublic: true, author: userId });
+	const PostAggregateWithAuthor = generatePostWithAuthor(PostAggregate);
+	const posts = await PostAggregateWithAuthor;
+
 	return res
 		.status(200)
 		.json(
@@ -187,7 +208,11 @@ const getPublicPosts = asyncReqHandler(async (req, res) => {
 const getAllPosts = asyncReqHandler(async (req, res) => {
 	const user = req.user;
 	if (!user) throw new ApiError(401, "Unauthorized request");
-	const posts = await Post.find({ author: user?._id });
+
+	const PostAggregate = Post.aggregate().match({ author: user?._id });
+	const PostAggregateWithAuthor = generatePostWithAuthor(PostAggregate);
+	const posts = await PostAggregateWithAuthor;
+
 	return res
 		.status(200)
 		.json(new ApiResponse("Successfully fetched all posts", { posts }, 200));
@@ -201,7 +226,7 @@ const searchPosts = asyncReqHandler(async (req, res) => {
 	if (!searchTextEmbedding)
 		throw new ApiError(500, "Something went wrong : Embedding Service");
 
-	const posts = await Post.aggregate([
+	const PostAggregate = Post.aggregate([
 		{
 			$rankFusion: {
 				input: {
@@ -252,12 +277,10 @@ const searchPosts = asyncReqHandler(async (req, res) => {
 
 		{
 			$limit: 10,
-		},
-
-		{
-			$project: postSearchFields,
-		},
+		}
 	]);
+	const PostAggregateWithAuthor = generatePostWithAuthor(PostAggregate);
+	const posts = await PostAggregateWithAuthor;
 
 	return res
 		.status(200)
@@ -349,7 +372,8 @@ const getPostRecommendations = asyncReqHandler(async (req, res) => {
 			);
 	} else {
 		const embedding = post.embedding;
-		const recommendations = await Post.aggregate([
+
+		const PostAggregate = Post.aggregate([
 			{
 				$vectorSearch: {
 					index: "post_vector_search_index",
@@ -368,12 +392,11 @@ const getPostRecommendations = asyncReqHandler(async (req, res) => {
 						$ne: post._id,
 					},
 				},
-			},
-			{
-				$project: postReccomendationFields,
-			},
-		]);
 
+			}
+		]);
+		const PostAggregateWithAuthor = generatePostWithAuthor(PostAggregate);
+		const recommendations = await PostAggregateWithAuthor;
 		const stringifiedRecommendations = JSON.stringify(recommendations);
 		await redisClient.set(recommendationsRedisKey, stringifiedRecommendations, {
 			EX: 60 * 60 * 24,
