@@ -4,8 +4,7 @@ import { redisClient } from "../redis/createRedisClient.js";
 import { embeddingService } from "../services/embedding.service.js";
 import { markdownService } from "../services/markdown.service.js";
 import { summaryService } from "../services/summary.service.js";
-
-import { postSearchFields, postAutocompleteFields} from "../utils/constants.js";
+import { postSearchFields, postAutocompleteFields, postRecommendationFields } from "../utils/constants.js";
 
 import {
 	ApiError,
@@ -22,7 +21,7 @@ function generatePostWithAuthor(aggregate) {
 		localField: "author",
 		foreignField: "_id",
 		as: "author",
-	}).unwind("author").project(postSearchFields);
+	}).unwind("author").project(postRecommendationFields);
 }
 
 // TODO: Add rate limiter for post
@@ -163,12 +162,9 @@ const updateCoverImage = asyncReqHandler(async (req, res) => {
 const getPublicPostBySlug = asyncReqHandler(async (req, res) => {
 	const slug = req.params?.slug;
 	if (!slug) throw new ApiError(400, "slug is required");
-
-	const PostAggregate = Post.aggregate().match({ isPublic: true, slug })
-	const PostAggregateWithAuthor = generatePostWithAuthor(PostAggregate);
 	
-	const post = (await PostAggregateWithAuthor).post;
-	console.log(post)
+	const post = await Post.findOne({slug, isPublic: true}).select(postSearchFields);
+
 	if (!post) throw new ApiError(404, "Post not found");
 	return res
 		.status(200)
