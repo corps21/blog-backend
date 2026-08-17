@@ -42,6 +42,6 @@ router
 	) // DONE ✅
 
 	.get("/:id", verifyJWT, getUser) // DONE ✅
-	.get("/:id/posts", verifyJWT, getPublicPosts); // DONE ✅
+	.get("/:id/posts", getPublicPosts); // DONE ✅
 
 export default router;

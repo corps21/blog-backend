@@ -9,7 +9,7 @@ import {
 	postAutocompleteFields,
 	postRecommendationFields,
 } from "../utils/constants.js";
-
+import { User } from "../models/index.js";
 import {
 	ApiError,
 	ApiResponse,
@@ -216,13 +216,13 @@ const getPublicPosts = asyncReqHandler(async (req, res) => {
 	const userId = req.params?.id;
 	if (!userId) throw new ApiError(400, "UserId is required");
 
-	const PostAggregate = Post.aggregate().match({
-		isPublic: true,
-		author: userId,
-	});
+	const user = await User.findById(userId);
+	if (!user) throw new ApiError(404, "User not found");
+
+	const PostAggregate = Post.aggregate().match({ author: user._id, isPublic: true });
 	const PostAggregateWithAuthor = generatePostWithAuthor(PostAggregate);
 	const posts = await PostAggregateWithAuthor;
-
+	
 	return res
 		.status(200)
 		.json(
